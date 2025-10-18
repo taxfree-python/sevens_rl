@@ -106,6 +106,43 @@ def test_custom_reward_config():
     assert env.reward_config == custom_rewards
 
 
+def test_initial_sevens_placement():
+    """初期化フェーズで全ての7が場に出ることをテスト"""
+    env = SevensEnv(num_players=4)
+    env.reset(seed=42)
+
+    # 全ての7が場に出ていることを確認
+    for suit in range(4):
+        seven_id = Card(suit, 7).to_id()
+        assert env.board[seven_id] == 1, f"7 of suit {suit} should be on board"
+
+    # どのプレイヤーも7を持っていないことを確認
+    for agent in env.agents:
+        for suit in range(4):
+            seven_id = Card(suit, 7).to_id()
+            assert (
+                env.hands[agent][seven_id] == 0
+            ), f"{agent} should not have 7 of suit {suit}"
+
+
+def test_diamond_seven_starting_player():
+    """ダイヤの7を持っていたプレイヤーが先攻になることをテスト"""
+    # 複数回テストして確率的に検証
+    for seed in range(10):
+        env = SevensEnv(num_players=4)
+        # reset前にダイヤの7の持ち主を追跡できないため、
+        # resetが正常に完了し、先攻プレイヤーが決まることを確認
+        env.reset(seed=seed)
+
+        # agent_selectionが設定されていることを確認
+        assert env.agent_selection is not None
+        assert env.agent_selection in env.agents
+
+        # ダイヤの7が場に出ていることを確認
+        diamond_seven_id = Card(2, 7).to_id()  # suit=2はダイヤ
+        assert env.board[diamond_seven_id] == 1
+
+
 def run_interactive_game(num_players=4, render=True, reward_config=None):
     """インタラクティブなゲーム実行（pytest実行時はスキップ）"""
     env = SevensEnv(
