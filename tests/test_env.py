@@ -143,6 +143,83 @@ def test_diamond_seven_starting_player():
         assert env.board[diamond_seven_id] == 1
 
 
+def test_card_distribution():
+    """カード配布が正しく行われることをテスト"""
+    # 2人プレイ: 52枚を均等に配布 (各26枚)
+    env = SevensEnv(num_players=2)
+    env.reset(seed=42)
+
+    # 7を除いた手札枚数を確認 (各プレイヤーは7を2枚ずつ持っていたはず)
+    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
+    cards_on_board = np.sum(env.board)
+
+    # 手札 + 場のカード = 52枚
+    assert total_cards_in_hands + cards_on_board == 52
+    # 場には4枚の7がある
+    assert cards_on_board == 4
+
+    # 3人プレイ: 52枚を配布 (17枚 or 18枚、余り1枚)
+    env = SevensEnv(num_players=3)
+    env.reset(seed=42)
+
+    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
+    cards_on_board = np.sum(env.board)
+
+    # 手札 + 場のカード = 52枚
+    assert total_cards_in_hands + cards_on_board == 52
+    # 場には4枚の7がある
+    assert cards_on_board == 4
+
+    # 各プレイヤーの手札枚数を確認 (7を除いた後: 15枚 or 16枚)
+    hand_sizes = [np.sum(env.hands[agent]) for agent in env.agents]
+    # 48枚 (52 - 4枚の7) を3人で分配: 16, 16, 16 または 15, 16, 17 など
+    assert sum(hand_sizes) == 48
+    assert min(hand_sizes) >= 15
+    assert max(hand_sizes) <= 17
+
+    # 4人プレイ: 52枚を均等に配布 (各13枚)
+    env = SevensEnv(num_players=4)
+    env.reset(seed=42)
+
+    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
+    cards_on_board = np.sum(env.board)
+
+    # 手札 + 場のカード = 52枚
+    assert total_cards_in_hands + cards_on_board == 52
+    # 場には4枚の7がある
+    assert cards_on_board == 4
+
+    # 各プレイヤーの手札枚数 (7を除いた後: 11枚, 12枚, 12枚, 13枚 など)
+    hand_sizes = [np.sum(env.hands[agent]) for agent in env.agents]
+    assert sum(hand_sizes) == 48
+    assert min(hand_sizes) >= 11
+    assert max(hand_sizes) <= 13
+
+
+def test_remainder_card_randomization():
+    """余りカードがランダムに配布されることをテスト（3人プレイ）"""
+    # 複数回実行して、余りカードを持つプレイヤーが変わることを確認
+    player_with_extra_card_counts = {"player_0": 0, "player_1": 0, "player_2": 0}
+
+    for seed in range(30):  # 30回試行
+        env = SevensEnv(num_players=3)
+        env.reset(seed=seed)
+
+        # 各プレイヤーの手札枚数を確認
+        hand_sizes = {agent: int(np.sum(env.hands[agent])) for agent in env.agents}
+
+        # 最大枚数を持つプレイヤーを特定
+        max_size = max(hand_sizes.values())
+        for agent, size in hand_sizes.items():
+            if size == max_size:
+                player_with_extra_card_counts[agent] += 1
+
+    # 各プレイヤーが少なくとも1回は余りカードを持つことを確認
+    # (完全にランダムなので、稀に偏る可能性があるが、30回なら十分)
+    for agent, count in player_with_extra_card_counts.items():
+        assert count > 0, f"{agent} never received the extra card in 30 trials"
+
+
 def run_interactive_game(num_players=4, render=True, reward_config=None):
     """インタラクティブなゲーム実行（pytest実行時はスキップ）"""
     env = SevensEnv(
