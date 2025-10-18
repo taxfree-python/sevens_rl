@@ -1,0 +1,5 @@
+*.pyc
+ToDo.md
+memo.md
+.devcontainer
+.serena/
