@@ -18,7 +18,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from src.sevens_env import SevensEnv
-from src.utils import setup_logger
+from src.utils import setup_logger, validate_config
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="default")
@@ -29,12 +29,21 @@ def main(cfg: DictConfig) -> None:
     Args:
         cfg: Hydra configuration loaded from configs/default.yaml
     """
-    # Set up logger with configuration
+    # Validate configuration
+    validate_config(cfg)
+
+    # Set up logger with configuration (level is auto-converted from string)
     logger = setup_logger(
         name="demo",
-        level=cfg.logging.level,
+        level=cfg.logging.level,  # "INFO" -> logging.INFO automatically
         log_file=f"{cfg.logging.log_dir}/{cfg.logging.log_file}",
+        use_rotation=True,  # Enable log rotation
+        max_bytes=10 * 1024 * 1024,  # 10MB
     )
+
+    # Disable Hydra's default logging to avoid duplicates
+    import logging
+    logging.getLogger("hydra").setLevel(logging.WARNING)
 
     logger.info("="*70)
     logger.info("Sevens RL - Logging & Configuration Demo")
