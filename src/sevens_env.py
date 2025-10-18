@@ -10,15 +10,13 @@
 - 手札を最初になくしたプレイヤーの勝ち
 """
 
+
 import numpy as np
-from typing import Dict, List, Tuple, Optional
+from gymnasium import spaces
 from pettingzoo import AECEnv
 from pettingzoo.utils.agent_selector import AgentSelector
-from pettingzoo.utils import wrappers
-from gymnasium import spaces
 
 from configs.config import DEFAULT_REWARDS
-
 
 # カードの定義
 SUITS = ['♠', '♥', '♦', '♣']  # スペード、ハート、ダイヤ、クラブ
@@ -63,15 +61,15 @@ class SevensEnv(AECEnv):
         'is_parallelizable': False,
     }
 
-    def __init__(self, num_players: int = 4, render_mode: Optional[str] = None, 
-                 reward_config: Optional[Dict[int, float]] = None):
+    def __init__(self, num_players: int = 4, render_mode: str | None = None,
+                 reward_config: dict[int, float] | None = None):
         super().__init__()
 
         assert 2 <= num_players <= 4, "プレイヤー数は2-4人"
 
         self.num_players = num_players
         self.render_mode = render_mode
-        
+
         # 報酬設定（カスタム設定がなければデフォルトを使用）
         if reward_config is None:
             self.reward_config = DEFAULT_REWARDS[num_players]
@@ -102,17 +100,17 @@ class SevensEnv(AECEnv):
 
         self.reset()
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, seed: int | None = None, options: dict | None = None):
         """環境をリセット"""
         if seed is not None:
             np.random.seed(seed)
 
         # 状態初期化
         self.agents = self.possible_agents[:]
-        self.rewards = {agent: 0 for agent in self.agents}
-        self._cumulative_rewards = {agent: 0 for agent in self.agents}
-        self.terminations = {agent: False for agent in self.agents}
-        self.truncations = {agent: False for agent in self.agents}
+        self.rewards = dict.fromkeys(self.agents, 0)
+        self._cumulative_rewards = dict.fromkeys(self.agents, 0)
+        self.terminations = dict.fromkeys(self.agents, False)
+        self.truncations = dict.fromkeys(self.agents, False)
         self.infos = {agent: {} for agent in self.agents}
 
         # ゲーム状態
@@ -141,7 +139,7 @@ class SevensEnv(AECEnv):
             agent = self.agents[agent_idx]
             self.hands[agent][card_id] = 1
 
-    def observe(self, agent: str) -> Dict:
+    def observe(self, agent: str) -> dict:
         """エージェントの観測を取得"""
         observation = {
             'board': self.board.copy(),
@@ -159,9 +157,8 @@ class SevensEnv(AECEnv):
 
         # 手札の各カードについて、出せるかチェック
         for card_id in range(NUM_CARDS):
-            if self.hands[agent][card_id] == 1:  # 手札にある
-                if self._is_valid_play(card_id):
-                    mask[card_id] = 1
+            if self.hands[agent][card_id] == 1 and self._is_valid_play(card_id):
+                mask[card_id] = 1
 
         return mask
 
@@ -213,7 +210,7 @@ class SevensEnv(AECEnv):
             if np.sum(self.hands[agent]) == 0:
                 self.finished_order.append(agent)
                 self.terminations[agent] = True
-                
+
                 # 順位に応じた報酬を設定
                 rank = len(self.finished_order)
                 self.rewards[agent] = self._get_reward_for_rank(rank)

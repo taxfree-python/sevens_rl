@@ -3,10 +3,9 @@
 ランダムエージェントで動作確認
 """
 
-import pytest
 import numpy as np
-from src.sevens_env import SevensEnv, Card
-from configs.config import EVAL_CONFIG
+
+from src.sevens_env import Card, SevensEnv
 
 
 def random_agent(observation, agent):

@@ -1,9 +1,9 @@
 """カスタム報酬設定のテスト"""
 
-import pytest
 import numpy as np
-from src.sevens_env import SevensEnv
+
 from configs.config import DEFAULT_REWARDS
+from src.sevens_env import SevensEnv
 
 
 def run_game_with_rewards(reward_config, seed=42):
@@ -11,7 +11,8 @@ def run_game_with_rewards(reward_config, seed=42):
     env = SevensEnv(num_players=4, reward_config=reward_config)
     env.reset(seed=seed)
 
-    for step in range(1000):
+    step_count = 0
+    for _step in range(1000):
         agent = env.agent_selection
 
         if env.terminations[agent] or env.truncations[agent]:
@@ -25,7 +26,9 @@ def run_game_with_rewards(reward_config, seed=42):
             action = np.random.choice(valid_actions)
             env.step(action)
 
-    return env, step + 1
+        step_count += 1
+
+    return env, step_count
 
 
 def test_custom_winner_takes_all_rewards():
@@ -85,7 +88,7 @@ def test_negative_rewards():
     env, step_count = run_game_with_rewards(negative_rewards)
 
     # 全プレイヤーが負の報酬を得ていることを確認
-    for player, reward in env._cumulative_rewards.items():
+    for _player, reward in env._cumulative_rewards.items():
         assert reward < 0
 
 

@@ -4,8 +4,6 @@ Sevens RL Environment Configuration
 ゲーム環境のハイパーパラメータ設定
 """
 
-from typing import Dict
-
 
 # =============================================================================
 # 報酬設定 (Reward Configuration)
@@ -51,7 +49,7 @@ class SevensConfig:
     def __init__(
         self,
         num_players: int = 4,
-        reward_config: Dict[int, float] = None,
+        reward_config: dict[int, float] = None,
         render_mode: str = None,
     ):
         """
@@ -69,7 +67,7 @@ class SevensConfig:
         else:
             self.reward_config = reward_config
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """設定を辞書形式で取得"""
         return {
             'num_players': self.num_players,

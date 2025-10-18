@@ -2,16 +2,16 @@
 config.pyの各種設定をテストするスクリプト
 """
 
-import pytest
 import numpy as np
-from src.sevens_env import SevensEnv
+
 from configs.config import (
     DEFAULT_CONFIG,
-    TRAINING_CONFIG,
-    EXPERIMENT_WTA_CONFIG,
     EXPERIMENT_SPARSE_CONFIG,
+    EXPERIMENT_WTA_CONFIG,
+    TRAINING_CONFIG,
     SevensConfig,
 )
+from src.sevens_env import SevensEnv
 
 
 def run_game_with_config(env_config, seed=42):
@@ -24,7 +24,8 @@ def run_game_with_config(env_config, seed=42):
     env.reset(seed=seed)
 
     # ランダムエージェントでゲームを実行
-    for step in range(1000):
+    step_count = 0
+    for _step in range(1000):
         agent = env.agent_selection
 
         if env.terminations[agent] or env.truncations[agent]:
@@ -38,7 +39,9 @@ def run_game_with_config(env_config, seed=42):
             action = np.random.choice(valid_actions)
             env.step(action)
 
-    return env, step + 1
+        step_count += 1
+
+    return env, step_count
 
 
 def test_default_config():

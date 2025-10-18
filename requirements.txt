@@ -9,3 +9,6 @@ torchaudio
 # Testing
 pytest>=7.0.0
 pytest-cov
+
+# Linting and Formatting
+ruff>=0.1.0

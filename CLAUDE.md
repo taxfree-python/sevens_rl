@@ -10,9 +10,9 @@ Reinforcement learning project for the Japanese card game Sevens (七並べ). Us
 
 VSCode Dev Container with Python 3.11, CPU-only PyTorch, Node.js 22, and uv package manager.
 
-**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio, pytest, pytest-cov
+**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio, pytest, pytest-cov, ruff
 
-**Tools**: black (formatting), flake8 and mypy (linting), pytest (testing), basic type checking enabled
+**Tools**: ruff (linting/formatting), pytest (testing), basic type checking enabled
 
 **Project structure**:
 ```
@@ -61,6 +61,11 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install --no-cache-dir -r requirements.txt
+
+# Linting and formatting with ruff
+ruff check .                       # Check for linting issues
+ruff check --fix .                 # Auto-fix issues
+ruff format .                      # Format code
 
 # Run tests with pytest
 pytest tests/ -v                    # Run all tests with verbose output
@@ -140,8 +145,9 @@ All tests use pytest framework. Run with `pytest tests/ -v`.
 ## Coding Style
 
 - **Bilingual approach**: Japanese docstrings for game logic, English for RL/technical code
-- **Type hints**: Use for function signatures (matches PettingZoo API patterns)
+- **Type hints**: Use modern Python 3.10+ syntax (`dict[str, int]` instead of `Dict[str, int]`, `str | None` instead of `Optional[str]`)
 - **Naming**: snake_case, descriptive identifiers (e.g., `_get_action_mask`, `_is_valid_play`)
+- **Linting**: Ruff for fast linting and formatting (configured in `ruff.toml`)
 - **Testing**: pytest framework with deterministic seeds (`env.reset(seed=42)`) for reproducible tests
 
 ## Planned Extensions
