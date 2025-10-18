@@ -42,6 +42,7 @@ ToDo.md
 memo.md
 .devcontainer
 .serena/
+.claude/
 
 # Logs
 logs/*.log
