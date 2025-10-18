@@ -10,21 +10,28 @@ Reinforcement learning project for the Japanese card game Sevens (七並べ). Us
 
 VSCode Dev Container with Python 3.11, CPU-only PyTorch, Node.js 22, and uv package manager.
 
-**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio, pytest, pytest-cov, ruff
+**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio, pytest, pytest-cov, ruff, hydra-core
 
-**Tools**: ruff (linting/formatting), pytest (testing), basic type checking enabled
+**Tools**: ruff (linting/formatting), pytest (testing), hydra (configuration management), basic type checking enabled
 
 **Project structure**:
 ```
 sevens_rl/
 ├── src/              # Source code
-│   └── sevens_env.py # PettingZoo environment implementation
+│   ├── sevens_env.py # PettingZoo environment implementation
+│   └── utils/        # Utility modules
+│       └── logger.py # Logging configuration
 ├── tests/            # Test files
 │   ├── test_env.py
 │   ├── test_custom_rewards.py
 │   └── test_configs.py
 ├── configs/          # Configuration files
-│   └── config.py     # Reward configurations
+│   ├── config.py     # Reward configurations
+│   ├── default.yaml  # Default hyperparameters
+│   └── train_dqn.yaml # DQN training configuration
+├── examples/         # Example scripts
+│   └── demo_logging_config.py # Logging/config demo
+├── logs/             # Log files (gitignored except .gitkeep)
 └── notebooks/        # Jupyter notebooks (for experiments)
 ```
 
@@ -76,6 +83,68 @@ pytest tests/ -v --cov=src         # Run with coverage report
 python -m tests.test_env
 python -m tests.test_custom_rewards
 python -m tests.test_configs
+
+# Run demo scripts
+python examples/demo_logging_config.py              # Demo with default config
+python examples/demo_logging_config.py --config-name=train_dqn  # Demo with DQN config
+```
+
+## Logging and Configuration Management
+
+### Logging (`src/utils/logger.py`)
+
+Provides standardized logging for training, evaluation, and debugging:
+
+```python
+from src.utils import setup_logger, get_logger
+
+# Set up logger with file output
+logger = setup_logger(
+    name="training",
+    level=logging.INFO,
+    log_file="logs/train.log"
+)
+
+# Or get a simple logger
+logger = get_logger(__name__)
+logger.info("Training started")
+```
+
+**Features**:
+- Console and file output
+- Configurable log levels
+- Timestamped messages
+- UTF-8 encoding support
+
+### Configuration Management (Hydra)
+
+Uses Hydra for flexible configuration management:
+
+```python
+import hydra
+from omegaconf import DictConfig
+
+@hydra.main(version_base=None, config_path="configs", config_name="default")
+def main(cfg: DictConfig):
+    logger = setup_logger("app", level=cfg.logging.level)
+    env = SevensEnv(num_players=cfg.env.num_players)
+    # ...
+```
+
+**Configuration files**:
+- `configs/default.yaml`: Base configuration with all parameters
+- `configs/train_dqn.yaml`: DQN-specific training settings
+
+**Usage**:
+```bash
+# Use default config
+python script.py
+
+# Override specific parameters
+python script.py env.num_players=3 training.learning_rate=0.0001
+
+# Use different config file
+python script.py --config-name=train_dqn
 ```
 
 ## Implemented Architecture
