@@ -1,0 +1,49 @@
+# Sevens RL Default Configuration
+# This file defines default hyperparameters for training and evaluation
+
+# Environment settings
+env:
+  num_players: 4
+  render_mode: null  # Set to 'human' for visualization
+  max_steps: 1000
+  reward_config: null  # null uses DEFAULT_REWARDS from config.py
+
+# Training hyperparameters
+training:
+  num_episodes: 10000
+  batch_size: 64
+  learning_rate: 0.001
+  gamma: 0.99  # Discount factor
+  epsilon_start: 1.0
+  epsilon_end: 0.01
+  epsilon_decay: 0.995
+  target_update_freq: 10  # Update target network every N episodes
+  save_freq: 1000  # Save checkpoint every N episodes
+
+# Network architecture
+network:
+  hidden_layers: [256, 128]
+  activation: "relu"
+  dropout: 0.1
+
+# Logging settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_dir: "logs"
+  log_file: "train.log"
+  tensorboard: true
+  tensorboard_dir: "runs"
+
+# Experiment tracking
+experiment:
+  name: "sevens_baseline"
+  seed: 42
+  device: "cpu"  # 'cpu' or 'cuda'
+  num_workers: 1
+
+# Evaluation settings
+evaluation:
+  eval_freq: 100  # Evaluate every N episodes
+  num_eval_episodes: 10
+  render_eval: false
+  save_best: true  # Save model with best eval performance

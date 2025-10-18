@@ -42,3 +42,14 @@ ToDo.md
 memo.md
 .devcontainer
 .serena/
+
+# Logs
+logs/*.log
+logs/**/*.log
+
+# Hydra outputs
+outputs/
+multirun/
+
+# TensorBoard
+runs/
