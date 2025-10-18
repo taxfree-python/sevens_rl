@@ -43,11 +43,12 @@ def main(cfg: DictConfig) -> None:
 
     # Disable Hydra's default logging to avoid duplicates
     import logging
+
     logging.getLogger("hydra").setLevel(logging.WARNING)
 
-    logger.info("="*70)
+    logger.info("=" * 70)
     logger.info("Sevens RL - Logging & Configuration Demo")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
     # Display configuration
     logger.info("Configuration:")
@@ -76,7 +77,8 @@ def main(cfg: DictConfig) -> None:
 
             # Random action selection
             import numpy as np
-            action_mask = observation['action_mask']
+
+            action_mask = observation["action_mask"]
             valid_actions = np.where(action_mask == 1)[0]
             action = np.random.choice(valid_actions)
 
@@ -87,9 +89,9 @@ def main(cfg: DictConfig) -> None:
         logger.info(f"Finish order: {env.finished_order}")
         logger.info(f"Cumulative rewards: {env._cumulative_rewards}")
 
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("Demo completed successfully!")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
 
 if __name__ == "__main__":

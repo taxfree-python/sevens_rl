@@ -32,7 +32,7 @@ def run_game_with_config(env_config, seed=42):
             break
 
         observation = env.observe(agent)
-        action_mask = observation['action_mask']
+        action_mask = observation["action_mask"]
         valid_actions = np.where(action_mask == 1)[0]
 
         if len(valid_actions) > 0:
@@ -119,6 +119,7 @@ def test_config_dataclass_defaults():
     assert config.render_mode is None
     # デフォルトでは4人用の報酬設定が適用される
     from configs.config import DEFAULT_REWARDS
+
     assert config.reward_config == DEFAULT_REWARDS[4]
 
 
@@ -131,14 +132,14 @@ def run_interactive_config_tests():
         ("スパース報酬設定", EXPERIMENT_SPARSE_CONFIG),
     ]
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Sevens Environment - Configuration Tests")
-    print("="*70)
+    print("=" * 70)
 
     for config_name, env_config in configs:
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"テスト: {config_name}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         env, step_count = run_game_with_config(env_config)
         print(f"プレイヤー数: {env_config.num_players}")
         print(f"報酬設定: {env_config.reward_config}")
@@ -148,9 +149,9 @@ def run_interactive_config_tests():
         print(f"累積報酬: {env._cumulative_rewards}")
 
     # カスタム設定
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("テスト: カスタム設定 (3人プレイ)")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     custom_config = SevensConfig(
         num_players=3,
         reward_config={1: 5.0, 2: 1.0, 3: -2.0},
@@ -162,9 +163,9 @@ def run_interactive_config_tests():
     print(f"上がり順: {env.finished_order}")
     print(f"累積報酬: {env._cumulative_rewards}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("全テスト完了!")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from src.sevens_env import Card, SevensEnv
 
 def random_agent(observation, agent):
     """ランダムに有効なアクションを選択"""
-    action_mask = observation['action_mask']
+    action_mask = observation["action_mask"]
     valid_actions = np.where(action_mask == 1)[0]
     return np.random.choice(valid_actions)
 
@@ -66,14 +66,14 @@ def test_observation_space():
     observation = env.observe(agent)
 
     # 観測空間のキーを確認
-    assert 'board' in observation
-    assert 'hand' in observation
-    assert 'action_mask' in observation
+    assert "board" in observation
+    assert "hand" in observation
+    assert "action_mask" in observation
 
     # 各要素のサイズを確認
-    assert observation['board'].shape == (52,)
-    assert observation['hand'].shape == (52,)
-    assert observation['action_mask'].shape == (53,)
+    assert observation["board"].shape == (52,)
+    assert observation["hand"].shape == (52,)
+    assert observation["action_mask"].shape == (53,)
 
 
 def test_action_mask_validity():
@@ -83,7 +83,7 @@ def test_action_mask_validity():
 
     agent = env.agent_selection
     observation = env.observe(agent)
-    action_mask = observation['action_mask']
+    action_mask = observation["action_mask"]
 
     # 有効なアクションが少なくとも1つ存在することを確認
     assert np.sum(action_mask) > 0
@@ -110,8 +110,8 @@ def run_interactive_game(num_players=4, render=True, reward_config=None):
     """インタラクティブなゲーム実行（pytest実行時はスキップ）"""
     env = SevensEnv(
         num_players=num_players,
-        render_mode='human' if render else None,
-        reward_config=reward_config
+        render_mode="human" if render else None,
+        reward_config=reward_config,
     )
     env.reset()
 
@@ -137,9 +137,9 @@ def run_interactive_game(num_players=4, render=True, reward_config=None):
 
         step_count += 1
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("ゲーム終了!")
-    print("="*50)
+    print("=" * 50)
     print(f"総ステップ数: {step_count}")
     print(f"上がり順: {env.finished_order}")
     print(f"累積報酬: {env._cumulative_rewards}")

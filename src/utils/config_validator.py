@@ -58,9 +58,7 @@ def validate_training_config(cfg: DictConfig) -> None:
         )
 
     if not 0 <= cfg.training.gamma <= 1:
-        raise ValueError(
-            f"training.gamma must be in [0, 1], got {cfg.training.gamma}"
-        )
+        raise ValueError(f"training.gamma must be in [0, 1], got {cfg.training.gamma}")
 
     if not 0 <= cfg.training.epsilon_start <= 1:
         raise ValueError(

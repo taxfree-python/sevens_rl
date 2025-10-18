@@ -52,32 +52,34 @@ def test_setup_logger_no_duplicates():
 
 def test_validate_config_valid(tmp_path):
     """Test config validation with valid configuration"""
-    cfg = OmegaConf.create({
-        "env": {
-            "num_players": 4,
-            "max_steps": 1000,
-            "render_mode": None,
-        },
-        "training": {
-            "num_episodes": 1000,
-            "batch_size": 64,
-            "learning_rate": 0.001,
-            "gamma": 0.99,
-            "epsilon_start": 1.0,
-            "epsilon_end": 0.01,
-            "epsilon_decay": 0.995,
-        },
-        "network": {
-            "hidden_layers": [256, 128],
-            "activation": "relu",
-            "dropout": 0.1,
-        },
-        "experiment": {
-            "seed": 42,
-            "device": "cpu",
-            "num_workers": 1,
-        },
-    })
+    cfg = OmegaConf.create(
+        {
+            "env": {
+                "num_players": 4,
+                "max_steps": 1000,
+                "render_mode": None,
+            },
+            "training": {
+                "num_episodes": 1000,
+                "batch_size": 64,
+                "learning_rate": 0.001,
+                "gamma": 0.99,
+                "epsilon_start": 1.0,
+                "epsilon_end": 0.01,
+                "epsilon_decay": 0.995,
+            },
+            "network": {
+                "hidden_layers": [256, 128],
+                "activation": "relu",
+                "dropout": 0.1,
+            },
+            "experiment": {
+                "seed": 42,
+                "device": "cpu",
+                "num_workers": 1,
+            },
+        }
+    )
 
     # Should not raise
     validate_config(cfg)
@@ -85,24 +87,26 @@ def test_validate_config_valid(tmp_path):
 
 def test_validate_config_invalid_num_players():
     """Test config validation with invalid num_players"""
-    cfg = OmegaConf.create({
-        "env": {"num_players": 5, "max_steps": 1000, "render_mode": None},
-        "training": {
-            "num_episodes": 1000,
-            "batch_size": 64,
-            "learning_rate": 0.001,
-            "gamma": 0.99,
-            "epsilon_start": 1.0,
-            "epsilon_end": 0.01,
-            "epsilon_decay": 0.995,
-        },
-        "network": {
-            "hidden_layers": [256],
-            "activation": "relu",
-            "dropout": 0.1,
-        },
-        "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
-    })
+    cfg = OmegaConf.create(
+        {
+            "env": {"num_players": 5, "max_steps": 1000, "render_mode": None},
+            "training": {
+                "num_episodes": 1000,
+                "batch_size": 64,
+                "learning_rate": 0.001,
+                "gamma": 0.99,
+                "epsilon_start": 1.0,
+                "epsilon_end": 0.01,
+                "epsilon_decay": 0.995,
+            },
+            "network": {
+                "hidden_layers": [256],
+                "activation": "relu",
+                "dropout": 0.1,
+            },
+            "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
+        }
+    )
 
     with pytest.raises(ValueError, match="num_players must be 2, 3, or 4"):
         validate_config(cfg)
@@ -110,24 +114,26 @@ def test_validate_config_invalid_num_players():
 
 def test_validate_config_invalid_gamma():
     """Test config validation with invalid gamma"""
-    cfg = OmegaConf.create({
-        "env": {"num_players": 4, "max_steps": 1000, "render_mode": None},
-        "training": {
-            "num_episodes": 1000,
-            "batch_size": 64,
-            "learning_rate": 0.001,
-            "gamma": 1.5,  # Invalid: > 1
-            "epsilon_start": 1.0,
-            "epsilon_end": 0.01,
-            "epsilon_decay": 0.995,
-        },
-        "network": {
-            "hidden_layers": [256],
-            "activation": "relu",
-            "dropout": 0.1,
-        },
-        "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
-    })
+    cfg = OmegaConf.create(
+        {
+            "env": {"num_players": 4, "max_steps": 1000, "render_mode": None},
+            "training": {
+                "num_episodes": 1000,
+                "batch_size": 64,
+                "learning_rate": 0.001,
+                "gamma": 1.5,  # Invalid: > 1
+                "epsilon_start": 1.0,
+                "epsilon_end": 0.01,
+                "epsilon_decay": 0.995,
+            },
+            "network": {
+                "hidden_layers": [256],
+                "activation": "relu",
+                "dropout": 0.1,
+            },
+            "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
+        }
+    )
 
     with pytest.raises(ValueError, match="gamma must be in"):
         validate_config(cfg)
@@ -135,24 +141,26 @@ def test_validate_config_invalid_gamma():
 
 def test_validate_config_invalid_activation():
     """Test config validation with invalid activation function"""
-    cfg = OmegaConf.create({
-        "env": {"num_players": 4, "max_steps": 1000, "render_mode": None},
-        "training": {
-            "num_episodes": 1000,
-            "batch_size": 64,
-            "learning_rate": 0.001,
-            "gamma": 0.99,
-            "epsilon_start": 1.0,
-            "epsilon_end": 0.01,
-            "epsilon_decay": 0.995,
-        },
-        "network": {
-            "hidden_layers": [256],
-            "activation": "invalid_activation",
-            "dropout": 0.1,
-        },
-        "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
-    })
+    cfg = OmegaConf.create(
+        {
+            "env": {"num_players": 4, "max_steps": 1000, "render_mode": None},
+            "training": {
+                "num_episodes": 1000,
+                "batch_size": 64,
+                "learning_rate": 0.001,
+                "gamma": 0.99,
+                "epsilon_start": 1.0,
+                "epsilon_end": 0.01,
+                "epsilon_decay": 0.995,
+            },
+            "network": {
+                "hidden_layers": [256],
+                "activation": "invalid_activation",
+                "dropout": 0.1,
+            },
+            "experiment": {"seed": 42, "device": "cpu", "num_workers": 1},
+        }
+    )
 
     with pytest.raises(ValueError, match="activation must be one of"):
         validate_config(cfg)
