@@ -43,6 +43,8 @@ memo.md
 .devcontainer
 .serena/
 .claude/
+CLAUDE.md
+
 
 # Logs
 logs/*.log
