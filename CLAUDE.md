@@ -10,9 +10,9 @@ Reinforcement learning project for the Japanese card game Sevens (七並べ). Us
 
 VSCode Dev Container with Python 3.11, CPU-only PyTorch, Node.js 22, and uv package manager.
 
-**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio
+**Installed packages**: torch (CPU), gymnasium, pettingzoo, numpy, pandas, torchvision, torchaudio, pytest, pytest-cov
 
-**Tools**: black (formatting), flake8 and mypy (linting), basic type checking enabled
+**Tools**: black (formatting), flake8 and mypy (linting), pytest (testing), basic type checking enabled
 
 **Project structure**:
 ```
@@ -43,7 +43,7 @@ docker run -it -v $(pwd):/workspace -w /workspace sevens-rl:latest bash
 
 # Inside container
 pip install --no-cache-dir -r requirements.txt  # if needed
-python -m tests.test_env
+pytest tests/ -v
 ```
 
 ### Using VSCode Dev Container
@@ -62,7 +62,12 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install --no-cache-dir -r requirements.txt
 
-# Run tests
+# Run tests with pytest
+pytest tests/ -v                    # Run all tests with verbose output
+pytest tests/test_env.py -v        # Run specific test file
+pytest tests/ -v --cov=src         # Run with coverage report
+
+# Run tests as standalone scripts (for interactive debugging)
 python -m tests.test_env
 python -m tests.test_custom_rewards
 python -m tests.test_configs
@@ -108,21 +113,36 @@ Provides predefined reward configurations:
 
 ### Test Scripts (`tests/`)
 
-**test_env.py**: Simple random agent implementation for smoke testing
-- `random_agent()`: Selects valid actions using action mask
-- `test_game()`: Runs full game with visualization
-- Outputs step count, finish order, and cumulative rewards
+All tests use pytest framework. Run with `pytest tests/ -v`.
 
-**test_custom_rewards.py**: Tests custom reward configurations
+**test_env.py**: Environment functionality tests
+- `test_basic_game()`: Verifies game completes successfully
+- `test_game_with_different_player_counts()`: Tests 2-4 player games
+- `test_observation_space()`: Validates observation structure
+- `test_action_mask_validity()`: Checks action masking works correctly
+- `test_custom_reward_config()`: Tests custom reward configurations
+- `run_interactive_game()`: Manual testing with visualization (run script directly)
 
-**test_configs.py**: Tests all predefined configurations
+**test_custom_rewards.py**: Reward configuration tests
+- `test_custom_winner_takes_all_rewards()`: Winner-takes-all reward scheme
+- `test_default_rewards()`: Default reward configuration
+- `test_sparse_rewards()`: Sparse reward scheme (1st/last only)
+- `test_negative_rewards()`: All-negative rewards
+
+**test_configs.py**: Configuration presets tests
+- `test_default_config()`: DEFAULT_CONFIG validation
+- `test_training_config()`: TRAINING_CONFIG validation
+- `test_winner_takes_all_config()`: EXPERIMENT_WTA_CONFIG validation
+- `test_sparse_rewards_config()`: EXPERIMENT_SPARSE_CONFIG validation
+- `test_custom_config_three_players()`: Custom 3-player game
+- `test_config_dataclass_defaults()`: SevensConfig defaults
 
 ## Coding Style
 
 - **Bilingual approach**: Japanese docstrings for game logic, English for RL/technical code
 - **Type hints**: Use for function signatures (matches PettingZoo API patterns)
 - **Naming**: snake_case, descriptive identifiers (e.g., `_get_action_mask`, `_is_valid_play`)
-- **Testing**: Deterministic seeds (`env.reset(seed=0)`) for reproducible tests
+- **Testing**: pytest framework with deterministic seeds (`env.reset(seed=42)`) for reproducible tests
 
 ## Planned Extensions
 
