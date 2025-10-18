@@ -29,5 +29,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 USER vscode
 RUN npm config set prefix "${HOME}/.npm-global" \
     && npm install -g @anthropic-ai/claude-code \
-    && echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
+    && echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc \
+    && npm install -g @openai/codex
 USER root
