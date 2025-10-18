@@ -13,7 +13,7 @@
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from pettingzoo import AECEnv
-from pettingzoo.utils.agent_selector import agent_selector
+from pettingzoo.utils.agent_selector import AgentSelector
 from pettingzoo.utils import wrappers
 from gymnasium import spaces
 
@@ -125,7 +125,7 @@ class SevensEnv(AECEnv):
 
         # エージェント選択の初期化
         # 最初は7を持っているプレイヤーから (簡略化のため player_0 から)
-        self._agent_selector = agent_selector(self.agents)
+        self._agent_selector = AgentSelector(self.agents)
         self.agent_selection = self._agent_selector.next()
 
         return self.observe(self.agent_selection), self.infos[self.agent_selection]
