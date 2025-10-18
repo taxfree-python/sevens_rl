@@ -1,0 +1,14 @@
+numpy
+pandas
+gymnasium
+pettingzoo>=1.24.0
+torch
+torchvision
+torchaudio
+
+# Testing
+pytest>=7.0.0
+pytest-cov
+
+# Linting and Formatting
+ruff>=0.1.0
