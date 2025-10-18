@@ -10,7 +10,6 @@
 - 手札を最初になくしたプレイヤーの勝ち
 """
 
-
 import numpy as np
 from gymnasium import spaces
 from pettingzoo import AECEnv
@@ -19,7 +18,7 @@ from pettingzoo.utils.agent_selector import AgentSelector
 from configs.config import DEFAULT_REWARDS
 
 # カードの定義
-SUITS = ['♠', '♥', '♦', '♣']  # スペード、ハート、ダイヤ、クラブ
+SUITS = ["♠", "♥", "♦", "♣"]  # スペード、ハート、ダイヤ、クラブ
 RANKS = list(range(1, 14))  # 1(A) から 13(K) まで
 NUM_CARDS = 52
 SEVEN_RANK = 7
@@ -27,6 +26,7 @@ SEVEN_RANK = 7
 
 class Card:
     """カードクラス"""
+
     def __init__(self, suit: int, rank: int):
         self.suit = suit  # 0-3
         self.rank = rank  # 1-13
@@ -45,7 +45,7 @@ class Card:
         return self.suit * 13 + (self.rank - 1)
 
     @staticmethod
-    def from_id(card_id: int) -> 'Card':
+    def from_id(card_id: int) -> "Card":
         """IDからカードを生成"""
         suit = card_id // 13
         rank = (card_id % 13) + 1
@@ -56,13 +56,17 @@ class SevensEnv(AECEnv):
     """七並べ環境 (PettingZoo AEC API)"""
 
     metadata = {
-        'render_modes': ['human'],
-        'name': 'sevens_v0',
-        'is_parallelizable': False,
+        "render_modes": ["human"],
+        "name": "sevens_v0",
+        "is_parallelizable": False,
     }
 
-    def __init__(self, num_players: int = 4, render_mode: str | None = None,
-                 reward_config: dict[int, float] | None = None):
+    def __init__(
+        self,
+        num_players: int = 4,
+        render_mode: str | None = None,
+        reward_config: dict[int, float] | None = None,
+    ):
         super().__init__()
 
         assert 2 <= num_players <= 4, "プレイヤー数は2-4人"
@@ -84,18 +88,19 @@ class SevensEnv(AECEnv):
         # 手札: 各カードを持っているか (0 or 1)
         # 有効なアクション: 各アクション(52カード+1パス)が有効か (0 or 1)
         self.observation_spaces = {
-            agent: spaces.Dict({
-                'board': spaces.MultiBinary(NUM_CARDS),
-                'hand': spaces.MultiBinary(NUM_CARDS),
-                'action_mask': spaces.MultiBinary(NUM_CARDS + 1),
-            })
+            agent: spaces.Dict(
+                {
+                    "board": spaces.MultiBinary(NUM_CARDS),
+                    "hand": spaces.MultiBinary(NUM_CARDS),
+                    "action_mask": spaces.MultiBinary(NUM_CARDS + 1),
+                }
+            )
             for agent in self.possible_agents
         }
 
         # 行動空間: 52枚のカード + パス (ID=52)
         self.action_spaces = {
-            agent: spaces.Discrete(NUM_CARDS + 1)
-            for agent in self.possible_agents
+            agent: spaces.Discrete(NUM_CARDS + 1) for agent in self.possible_agents
         }
 
         self.reset()
@@ -115,7 +120,9 @@ class SevensEnv(AECEnv):
 
         # ゲーム状態
         self.board = np.zeros(NUM_CARDS, dtype=np.int8)  # 場に出ているカード
-        self.hands = {agent: np.zeros(NUM_CARDS, dtype=np.int8) for agent in self.agents}
+        self.hands = {
+            agent: np.zeros(NUM_CARDS, dtype=np.int8) for agent in self.agents
+        }
         self.finished_order = []  # 上がった順番
 
         # カード配布
@@ -142,9 +149,9 @@ class SevensEnv(AECEnv):
     def observe(self, agent: str) -> dict:
         """エージェントの観測を取得"""
         observation = {
-            'board': self.board.copy(),
-            'hand': self.hands[agent].copy(),
-            'action_mask': self._get_action_mask(agent),
+            "board": self.board.copy(),
+            "hand": self.hands[agent].copy(),
+            "action_mask": self._get_action_mask(agent),
         }
         return observation
 
@@ -224,7 +231,9 @@ class SevensEnv(AECEnv):
                         if a not in self.finished_order:
                             self.finished_order.append(a)
                             self.terminations[a] = True
-                            self.rewards[a] = self._get_reward_for_rank(self.num_players)
+                            self.rewards[a] = self._get_reward_for_rank(
+                                self.num_players
+                            )
         else:  # パス
             pass
 
@@ -260,9 +269,9 @@ class SevensEnv(AECEnv):
         if self.render_mode != "human":
             return
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("七並べ (Sevens)")
-        print("="*50)
+        print("=" * 50)
 
         # 場の状態を表示
         print("\n場のカード:")

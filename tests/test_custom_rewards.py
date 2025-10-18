@@ -19,7 +19,7 @@ def run_game_with_rewards(reward_config, seed=42):
             break
 
         observation = env.observe(agent)
-        action_mask = observation['action_mask']
+        action_mask = observation["action_mask"]
         valid_actions = np.where(action_mask == 1)[0]
 
         if len(valid_actions) > 0:
@@ -94,18 +94,18 @@ def test_negative_rewards():
 
 def run_interactive_comparison():
     """対話的な報酬設定比較（pytest実行時はスキップ）"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("デフォルト報酬設定テスト")
-    print("="*70)
+    print("=" * 70)
     env, step_count = run_game_with_rewards(None)
     print(f"報酬設定: {env.reward_config}")
     print(f"総ステップ数: {step_count}")
     print(f"上がり順: {env.finished_order}")
     print(f"累積報酬: {env._cumulative_rewards}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("カスタム報酬設定テスト (Winner-takes-all)")
-    print("="*70)
+    print("=" * 70)
     custom_rewards = {1: 10.0, 2: 0.0, 3: 0.0, 4: 0.0}
     env, step_count = run_game_with_rewards(custom_rewards)
     print(f"報酬設定: {custom_rewards}")
