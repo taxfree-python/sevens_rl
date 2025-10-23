@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from src.sevens_env import Card, SevensEnv
+from src.sevens_env import Card, SevensEnv, NUM_CARDS, SEVEN_RANK
 
 
 def random_agent(observation, agent):
@@ -13,6 +13,36 @@ def random_agent(observation, agent):
     action_mask = observation["action_mask"]
     valid_actions = np.where(action_mask == 1)[0]
     return np.random.choice(valid_actions)
+
+
+def _simulate_initial_deal(num_players: int, seed: int) -> dict[str, list[int]]:
+    rng = np.random.RandomState(seed)
+    deck = np.arange(NUM_CARDS)
+    rng.shuffle(deck)
+    agents = [f"player_{i}" for i in range(num_players)]
+    hands = {agent: [] for agent in agents}
+    for idx, card_id in enumerate(deck):
+        agent = agents[idx % num_players]
+        hands[agent].append(int(card_id))
+    return hands
+
+
+def _expected_starting_player(num_players: int, seed: int) -> str:
+    hands = _simulate_initial_deal(num_players, seed)
+    diamond_seven_id = Card(2, SEVEN_RANK).to_id()
+    for agent in hands:
+        if diamond_seven_id in hands[agent]:
+            return agent
+    raise AssertionError("ダイヤの7を保持するプレイヤーが見つかりません")
+
+
+def _expected_hand_counts_after_setup(num_players: int, seed: int) -> dict[str, int]:
+    hands = _simulate_initial_deal(num_players, seed)
+    seven_index = SEVEN_RANK - 1
+    counts: dict[str, int] = {}
+    for agent, cards in hands.items():
+        counts[agent] = sum(1 for card_id in cards if card_id % 13 != seven_index)
+    return counts
 
 
 def test_basic_game():
@@ -104,6 +134,85 @@ def test_custom_reward_config():
 
     # 報酬設定が正しく適用されていることを確認
     assert env.reward_config == custom_rewards
+
+
+def test_initial_sevens_placement():
+    """初期化フェーズで全ての7が場に出ることをテスト"""
+    env = SevensEnv(num_players=4)
+    env.reset(seed=42)
+
+    # 全ての7が場に出ていることを確認
+    for suit in range(4):
+        seven_id = Card(suit, 7).to_id()
+        assert env.board[seven_id] == 1, f"7 of suit {suit} should be on board"
+
+    # どのプレイヤーも7を持っていないことを確認
+    for agent in env.agents:
+        for suit in range(4):
+            seven_id = Card(suit, 7).to_id()
+            assert (
+                env.hands[agent][seven_id] == 0
+            ), f"{agent} should not have 7 of suit {suit}"
+
+
+def test_diamond_seven_starting_player():
+    """ダイヤの7を持っていたプレイヤーが先攻になることをテスト"""
+    for seed in range(10):
+        expected_starting_player = _expected_starting_player(num_players=4, seed=seed)
+
+        env = SevensEnv(num_players=4)
+        env.reset(seed=seed)
+
+        assert env.agent_selection == expected_starting_player
+        assert env.starting_player == expected_starting_player
+
+        diamond_seven_id = Card(2, SEVEN_RANK).to_id()
+        assert env.board[diamond_seven_id] == 1
+
+
+def test_card_distribution():
+    """カード配布が正しく行われることをテスト"""
+    seeds = [0, 9, 42]
+
+    for num_players in [2, 3, 4]:
+        for seed in seeds:
+            env = SevensEnv(num_players=num_players)
+            env.reset(seed=seed)
+
+            expected_counts = _expected_hand_counts_after_setup(num_players, seed)
+            actual_counts = {
+                agent: int(np.sum(env.hands[agent])) for agent in env.agents
+            }
+
+            assert actual_counts == expected_counts
+
+            cards_on_board = int(np.sum(env.board))
+            assert cards_on_board == 4
+            assert sum(actual_counts.values()) + cards_on_board == NUM_CARDS
+
+
+def test_remainder_card_randomization():
+    """余りカードがランダムに配布されることをテスト（3人プレイ）"""
+    # 複数回実行して、余りカードを持つプレイヤーが変わることを確認
+    player_with_extra_card_counts = {"player_0": 0, "player_1": 0, "player_2": 0}
+
+    for seed in range(30):  # 30回試行
+        env = SevensEnv(num_players=3)
+        env.reset(seed=seed)
+
+        # 各プレイヤーの手札枚数を確認
+        hand_sizes = {agent: int(np.sum(env.hands[agent])) for agent in env.agents}
+
+        # 最大枚数を持つプレイヤーを特定
+        max_size = max(hand_sizes.values())
+        for agent, size in hand_sizes.items():
+            if size == max_size:
+                player_with_extra_card_counts[agent] += 1
+
+    # 各プレイヤーが少なくとも1回は余りカードを持つことを確認
+    # (完全にランダムなので、稀に偏る可能性があるが、30回なら十分)
+    for agent, count in player_with_extra_card_counts.items():
+        assert count > 0, f"{agent} never received the extra card in 30 trials"
 
 
 def run_interactive_game(num_players=4, render=True, reward_config=None):

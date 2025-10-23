@@ -128,10 +128,17 @@ class SevensEnv(AECEnv):
         # カード配布
         self._deal_cards()
 
+        # 初期化フェーズ: 全ての7を場に出す
+        starting_player = self._place_all_sevens()
+        self.starting_player = starting_player
+
         # エージェント選択の初期化
-        # 最初は7を持っているプレイヤーから (簡略化のため player_0 から)
+        # ダイヤの7を出したプレイヤーが先攻
         self._agent_selector = AgentSelector(self.agents)
-        self.agent_selection = self._agent_selector.next()
+        # starting_playerまで進める
+        while self._agent_selector.next() != starting_player:
+            pass
+        self.agent_selection = starting_player
 
         return self.observe(self.agent_selection), self.infos[self.agent_selection]
 
@@ -145,6 +152,34 @@ class SevensEnv(AECEnv):
             agent_idx = i % self.num_players
             agent = self.agents[agent_idx]
             self.hands[agent][card_id] = 1
+
+    def _place_all_sevens(self) -> str:
+        """
+        初期化フェーズ: 全プレイヤーが持っている7を場に出す
+
+        Returns:
+            str: ダイヤの7を持っていたプレイヤー（先攻プレイヤー）
+        """
+        starting_player = None
+        diamond_seven_id = Card(2, SEVEN_RANK).to_id()  # ダイヤの7 (suit=2)
+
+        # 全プレイヤーの手札から7を探して場に出す
+        for agent in self.agents:
+            for suit in range(4):  # 4スート
+                seven_id = Card(suit, SEVEN_RANK).to_id()
+                if self.hands[agent][seven_id] == 1:
+                    # 手札から削除して場に出す
+                    self.hands[agent][seven_id] = 0
+                    self.board[seven_id] = 1
+
+                    # ダイヤの7を持っていたプレイヤーを記録
+                    if seven_id == diamond_seven_id:
+                        starting_player = agent
+
+        # ダイヤの7を持っているプレイヤーが必ずいるはず
+        assert starting_player is not None, "ダイヤの7が見つかりません"
+
+        return starting_player
 
     def observe(self, agent: str) -> dict:
         """エージェントの観測を取得"""
