@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from src.sevens_env import Card, SevensEnv
+from src.sevens_env import Card, SevensEnv, NUM_CARDS, SEVEN_RANK
 
 
 def random_agent(observation, agent):
@@ -13,6 +13,36 @@ def random_agent(observation, agent):
     action_mask = observation["action_mask"]
     valid_actions = np.where(action_mask == 1)[0]
     return np.random.choice(valid_actions)
+
+
+def _simulate_initial_deal(num_players: int, seed: int) -> dict[str, list[int]]:
+    rng = np.random.RandomState(seed)
+    deck = np.arange(NUM_CARDS)
+    rng.shuffle(deck)
+    agents = [f"player_{i}" for i in range(num_players)]
+    hands = {agent: [] for agent in agents}
+    for idx, card_id in enumerate(deck):
+        agent = agents[idx % num_players]
+        hands[agent].append(int(card_id))
+    return hands
+
+
+def _expected_starting_player(num_players: int, seed: int) -> str:
+    hands = _simulate_initial_deal(num_players, seed)
+    diamond_seven_id = Card(2, SEVEN_RANK).to_id()
+    for agent in hands:
+        if diamond_seven_id in hands[agent]:
+            return agent
+    raise AssertionError("ダイヤの7を保持するプレイヤーが見つかりません")
+
+
+def _expected_hand_counts_after_setup(num_players: int, seed: int) -> dict[str, int]:
+    hands = _simulate_initial_deal(num_players, seed)
+    seven_index = SEVEN_RANK - 1
+    counts: dict[str, int] = {}
+    for agent, cards in hands.items():
+        counts[agent] = sum(1 for card_id in cards if card_id % 13 != seven_index)
+    return counts
 
 
 def test_basic_game():
@@ -127,73 +157,38 @@ def test_initial_sevens_placement():
 
 def test_diamond_seven_starting_player():
     """ダイヤの7を持っていたプレイヤーが先攻になることをテスト"""
-    # 複数回テストして確率的に検証
     for seed in range(10):
+        expected_starting_player = _expected_starting_player(num_players=4, seed=seed)
+
         env = SevensEnv(num_players=4)
-        # reset前にダイヤの7の持ち主を追跡できないため、
-        # resetが正常に完了し、先攻プレイヤーが決まることを確認
         env.reset(seed=seed)
 
-        # agent_selectionが設定されていることを確認
-        assert env.agent_selection is not None
-        assert env.agent_selection in env.agents
+        assert env.agent_selection == expected_starting_player
+        assert env.starting_player == expected_starting_player
 
-        # ダイヤの7が場に出ていることを確認
-        diamond_seven_id = Card(2, 7).to_id()  # suit=2はダイヤ
+        diamond_seven_id = Card(2, SEVEN_RANK).to_id()
         assert env.board[diamond_seven_id] == 1
 
 
 def test_card_distribution():
     """カード配布が正しく行われることをテスト"""
-    # 2人プレイ: 52枚を均等に配布 (各26枚)
-    env = SevensEnv(num_players=2)
-    env.reset(seed=42)
+    seeds = [0, 9, 42]
 
-    # 7を除いた手札枚数を確認 (各プレイヤーは7を2枚ずつ持っていたはず)
-    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
-    cards_on_board = np.sum(env.board)
+    for num_players in [2, 3, 4]:
+        for seed in seeds:
+            env = SevensEnv(num_players=num_players)
+            env.reset(seed=seed)
 
-    # 手札 + 場のカード = 52枚
-    assert total_cards_in_hands + cards_on_board == 52
-    # 場には4枚の7がある
-    assert cards_on_board == 4
+            expected_counts = _expected_hand_counts_after_setup(num_players, seed)
+            actual_counts = {
+                agent: int(np.sum(env.hands[agent])) for agent in env.agents
+            }
 
-    # 3人プレイ: 52枚を配布 (17枚 or 18枚、余り1枚)
-    env = SevensEnv(num_players=3)
-    env.reset(seed=42)
+            assert actual_counts == expected_counts
 
-    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
-    cards_on_board = np.sum(env.board)
-
-    # 手札 + 場のカード = 52枚
-    assert total_cards_in_hands + cards_on_board == 52
-    # 場には4枚の7がある
-    assert cards_on_board == 4
-
-    # 各プレイヤーの手札枚数を確認 (7を除いた後: 15枚 or 16枚)
-    hand_sizes = [np.sum(env.hands[agent]) for agent in env.agents]
-    # 48枚 (52 - 4枚の7) を3人で分配: 16, 16, 16 または 15, 16, 17 など
-    assert sum(hand_sizes) == 48
-    assert min(hand_sizes) >= 15
-    assert max(hand_sizes) <= 17
-
-    # 4人プレイ: 52枚を均等に配布 (各13枚)
-    env = SevensEnv(num_players=4)
-    env.reset(seed=42)
-
-    total_cards_in_hands = sum(np.sum(env.hands[agent]) for agent in env.agents)
-    cards_on_board = np.sum(env.board)
-
-    # 手札 + 場のカード = 52枚
-    assert total_cards_in_hands + cards_on_board == 52
-    # 場には4枚の7がある
-    assert cards_on_board == 4
-
-    # 各プレイヤーの手札枚数 (7を除いた後: 11枚, 12枚, 12枚, 13枚 など)
-    hand_sizes = [np.sum(env.hands[agent]) for agent in env.agents]
-    assert sum(hand_sizes) == 48
-    assert min(hand_sizes) >= 11
-    assert max(hand_sizes) <= 13
+            cards_on_board = int(np.sum(env.board))
+            assert cards_on_board == 4
+            assert sum(actual_counts.values()) + cards_on_board == NUM_CARDS
 
 
 def test_remainder_card_randomization():

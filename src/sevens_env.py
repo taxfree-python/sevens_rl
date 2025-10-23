@@ -130,6 +130,7 @@ class SevensEnv(AECEnv):
 
         # 初期化フェーズ: 全ての7を場に出す
         starting_player = self._place_all_sevens()
+        self.starting_player = starting_player
 
         # エージェント選択の初期化
         # ダイヤの7を出したプレイヤーが先攻
