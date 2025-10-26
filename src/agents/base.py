@@ -7,7 +7,7 @@ Abstract base class for agent policies.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Mapping
+from collections.abc import Mapping
 
 import numpy as np
 

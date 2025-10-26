@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import numpy as np
 
+from src.sevens_env import NUM_CARDS, SEVEN_RANK, Card
+
 from .base import AgentPolicy, Observation
-from src.sevens_env import Card, NUM_CARDS, SEVEN_RANK
 
 
 class NearestSevensAgent(AgentPolicy):
@@ -41,8 +42,5 @@ class NearestSevensAgent(AgentPolicy):
     def _priority(self, card_id: int) -> tuple[int, int]:
         card = Card.from_id(int(card_id))
         distance = abs(card.rank - SEVEN_RANK)
-        if self.prefer_high_rank:
-            tie_breaker = -card.rank
-        else:
-            tie_breaker = card.rank
+        tie_breaker = -card.rank if self.prefer_high_rank else card.rank
         return (distance, tie_breaker)

@@ -6,7 +6,7 @@
 import numpy as np
 
 from src.agents import RandomAgent
-from src.sevens_env import Card, SevensEnv, NUM_CARDS, SEVEN_RANK
+from src.sevens_env import NUM_CARDS, SEVEN_RANK, Card, SevensEnv
 
 
 def _simulate_initial_deal(num_players: int, seed: int) -> dict[str, list[int]]:
@@ -87,7 +87,6 @@ def test_observation_space():
     """観測空間が正しいことをテスト"""
     env = SevensEnv(num_players=4)
     env.reset(seed=42)
-    policy = RandomAgent(np.random.default_rng(1))
 
     agent = env.agent_selection
     observation = env.observe(agent)

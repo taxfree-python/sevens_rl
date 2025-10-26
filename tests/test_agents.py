@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from src.agents import NearestSevensAgent, RandomAgent
-from src.sevens_env import Card, NUM_CARDS, SEVEN_RANK
+from src.sevens_env import NUM_CARDS, SEVEN_RANK, Card
 
 
 def _fake_observation(mask_indices: list[int]) -> dict[str, np.ndarray]:
