@@ -5,14 +5,8 @@
 
 import numpy as np
 
+from src.agents import RandomAgent
 from src.sevens_env import Card, SevensEnv, NUM_CARDS, SEVEN_RANK
-
-
-def random_agent(observation, agent):
-    """ランダムに有効なアクションを選択"""
-    action_mask = observation["action_mask"]
-    valid_actions = np.where(action_mask == 1)[0]
-    return np.random.choice(valid_actions)
 
 
 def _simulate_initial_deal(num_players: int, seed: int) -> dict[str, list[int]]:
@@ -49,6 +43,7 @@ def test_basic_game():
     """基本的なゲームが正常に完了することをテスト"""
     env = SevensEnv(num_players=4, render_mode=None)
     env.reset(seed=42)
+    policy = RandomAgent(np.random.default_rng(0))
 
     step_count = 0
     max_steps = 1000
@@ -56,7 +51,7 @@ def test_basic_game():
     while env.agents and step_count < max_steps:
         agent = env.agent_selection
         observation = env.observe(agent)
-        action = random_agent(observation, agent)
+        action = policy.select_action(observation, agent)
         env.step(action)
         step_count += 1
 
@@ -73,6 +68,7 @@ def test_game_with_different_player_counts():
     for num_players in [2, 3, 4]:
         env = SevensEnv(num_players=num_players, render_mode=None)
         env.reset(seed=42)
+        policy = RandomAgent(np.random.default_rng(num_players))
 
         step_count = 0
         max_steps = 1000
@@ -80,7 +76,7 @@ def test_game_with_different_player_counts():
         while env.agents and step_count < max_steps:
             agent = env.agent_selection
             observation = env.observe(agent)
-            action = random_agent(observation, agent)
+            action = policy.select_action(observation, agent)
             env.step(action)
             step_count += 1
 
@@ -91,6 +87,7 @@ def test_observation_space():
     """観測空間が正しいことをテスト"""
     env = SevensEnv(num_players=4)
     env.reset(seed=42)
+    policy = RandomAgent(np.random.default_rng(1))
 
     agent = env.agent_selection
     observation = env.observe(agent)
@@ -110,6 +107,7 @@ def test_action_mask_validity():
     """アクションマスクが正しく機能することをテスト"""
     env = SevensEnv(num_players=4)
     env.reset(seed=42)
+    policy = RandomAgent(np.random.default_rng(1))
 
     agent = env.agent_selection
     observation = env.observe(agent)
@@ -119,8 +117,7 @@ def test_action_mask_validity():
     assert np.sum(action_mask) > 0
 
     # 有効なアクションを実行
-    valid_actions = np.where(action_mask == 1)[0]
-    action = valid_actions[0]
+    action = policy.select_action(observation, agent)
     env.step(action)
 
     # エラーが発生しないことを確認（正常に実行されればOK）
@@ -223,6 +220,7 @@ def run_interactive_game(num_players=4, render=True, reward_config=None):
         reward_config=reward_config,
     )
     env.reset()
+    policy = RandomAgent(np.random.default_rng())
 
     if render:
         env.render()
@@ -233,7 +231,7 @@ def run_interactive_game(num_players=4, render=True, reward_config=None):
     while env.agents and step_count < max_steps:
         agent = env.agent_selection
         observation = env.observe(agent)
-        action = random_agent(observation, agent)
+        action = policy.select_action(observation, agent)
         env.step(action)
 
         if render:
