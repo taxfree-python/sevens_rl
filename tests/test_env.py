@@ -146,9 +146,9 @@ def test_initial_sevens_placement():
     for agent in env.agents:
         for suit in range(4):
             seven_id = Card(suit, 7).to_id()
-            assert (
-                env.hands[agent][seven_id] == 0
-            ), f"{agent} should not have 7 of suit {suit}"
+            assert env.hands[agent][seven_id] == 0, (
+                f"{agent} should not have 7 of suit {suit}"
+            )
 
 
 def test_diamond_seven_starting_player():
