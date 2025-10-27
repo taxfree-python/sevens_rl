@@ -98,39 +98,20 @@ ruff format .             # Format code
 
 ## Working with AI Agents
 
-When working with AI coding assistants (like Claude Code), you may encounter requests to execute Python heredoc commands for file editing:
+**Prefer Edit tools over Python heredoc commands**
+
+AI agents should use dedicated file editing tools (Read/Edit/Write) instead of Python heredoc scripts for file modifications. If an agent suggests commands like:
 
 ```bash
 python - <<'PY'
   from pathlib import Path
   path = Path('tests/test_agents.py')
   text = path.read_text()
-  needle = "def test_some_function():\n    ..."
-  if needle not in text:
-      raise SystemExit('anchor not found')
-  addition = """..."""
-  # File modification logic follows
+  # ... file modification logic
 PY
 ```
 
-**What this does**:
-1. Executes Python code via stdin (`python -`)
-2. Reads file content using `Path.read_text()`
-3. Finds an anchor point (`needle`) in the existing code
-4. Inserts new code (`addition`) at that location
-5. Writes the modified content back to the file
-
-**Why agents use this approach**:
-- Complex insertion logic (e.g., adding code after a specific function)
-- Conditional edits (only if anchor exists)
-- Working around limitations of simple text replacement tools
-
-**Recommended alternatives**:
-- **File edit tools**: Most AI assistants have dedicated file editing capabilities that are safer and more trackable
-- **Manual editing**: For complex changes, review and manually edit files
-- **Simple sed/awk**: For straightforward insertions or replacements
-
-**Security note**: These commands are generally safe but always review what the script does before approving execution. The script should only read/write project files and not perform network requests or system modifications.
+Ask the agent to use proper Edit tools instead. These are safer, more trackable, and easier to review.
 
 ## Game Architecture
 
