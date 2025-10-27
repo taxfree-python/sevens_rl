@@ -273,6 +273,7 @@ class SevensEnv(AECEnv):
         # 累積報酬更新
         self._accumulate_rewards()
 
+        # 全員終了後にループを継続させない（自己対局ループでの無限パス対策）
         if len(self.finished_order) == self.num_players:
             self.agents = []
             return

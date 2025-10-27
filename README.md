@@ -67,6 +67,12 @@ print(env.finished_order)
 
 `NearestSevensAgent` は 7 に近いカードを優先して出す単純な規則で行動し、`RandomAgent` はマスクされた合法手から一様サンプリングします。
 
+ターミナル上で自己対局を試す場合は次のコマンドを利用してください。
+
+```bash
+python -m examples.agents_self_play
+```
+
 ## テストとLint
 ```bash
 pytest tests/ -v

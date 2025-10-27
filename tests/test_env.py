@@ -122,6 +122,27 @@ def test_action_mask_validity():
     # エラーが発生しないことを確認（正常に実行されればOK）
 
 
+def test_agents_list_clears_when_game_completes():
+    """全員が終了したらエージェントリストが空になることをテスト"""
+    env = SevensEnv(num_players=4)
+    env.reset(seed=0)
+    policy = RandomAgent(np.random.default_rng(0))
+
+    step_count = 0
+    max_steps = 500
+
+    while env.agents and step_count < max_steps:
+        agent = env.agent_selection
+        observation = env.observe(agent)
+        action = policy.select_action(observation, agent)
+        env.step(action)
+        step_count += 1
+
+    assert not env.agents
+    assert len(env.finished_order) == 4
+    assert step_count < max_steps
+
+
 def test_custom_reward_config():
     """カスタム報酬設定が正しく適用されることをテスト"""
     custom_rewards = {1: 10.0, 2: 5.0, 3: -5.0, 4: -10.0}

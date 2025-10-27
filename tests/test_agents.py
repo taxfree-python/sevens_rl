@@ -8,10 +8,11 @@ import numpy as np
 import pytest
 
 from src.agents import NearestSevensAgent, RandomAgent
+from src.agents.base import Observation
 from src.sevens_env import NUM_CARDS, SEVEN_RANK, Card
 
 
-def _fake_observation(mask_indices: list[int]) -> dict[str, np.ndarray]:
+def _fake_observation(mask_indices: list[int]) -> Observation:
     action_mask = np.zeros(NUM_CARDS + 1, dtype=np.int8)
     for idx in mask_indices:
         action_mask[idx] = 1
@@ -39,6 +40,30 @@ def test_random_agent_raises_without_actions():
     obs = _fake_observation([])
 
     with pytest.raises(ValueError):
+        agent.select_action(obs, "player_0")
+
+
+def test_random_agent_requires_action_mask():
+    agent = RandomAgent(np.random.default_rng(0))
+    obs: Observation = {
+        "board": np.zeros(NUM_CARDS, dtype=np.int8),
+        "hand": np.zeros(NUM_CARDS, dtype=np.int8),
+    }
+
+    with pytest.raises(ValueError, match="missing"):
+        agent.select_action(obs, "player_0")
+
+
+
+def test_random_agent_rejects_empty_mask():
+    agent = RandomAgent(np.random.default_rng(0))
+    obs: Observation = {
+        "board": np.zeros(NUM_CARDS, dtype=np.int8),
+        "hand": np.zeros(NUM_CARDS, dtype=np.int8),
+        "action_mask": np.zeros(0, dtype=np.int8),
+    }
+
+    with pytest.raises(ValueError, match="empty"):
         agent.select_action(obs, "player_0")
 
 
@@ -80,3 +105,28 @@ def test_nearest_sevens_agent_raises_without_any_action():
 
     with pytest.raises(ValueError):
         agent.select_action(obs, "player_4")
+
+
+
+def test_nearest_sevens_agent_requires_action_mask():
+    agent = NearestSevensAgent()
+    obs: Observation = {
+        "board": np.zeros(NUM_CARDS, dtype=np.int8),
+        "hand": np.zeros(NUM_CARDS, dtype=np.int8),
+    }
+
+    with pytest.raises(ValueError, match="missing"):
+        agent.select_action(obs, "player_5")
+
+
+
+def test_nearest_sevens_agent_rejects_empty_mask():
+    agent = NearestSevensAgent()
+    obs: Observation = {
+        "board": np.zeros(NUM_CARDS, dtype=np.int8),
+        "hand": np.zeros(NUM_CARDS, dtype=np.int8),
+        "action_mask": np.zeros(0, dtype=np.int8),
+    }
+
+    with pytest.raises(ValueError, match="empty"):
+        agent.select_action(obs, "player_6")

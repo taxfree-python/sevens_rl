@@ -24,6 +24,3 @@ class AgentPolicy(ABC):
     def select_action(self, observation: Observation, agent: str) -> int:
         """行動を選択する / Select an action for the given agent."""
 
-    def __call__(self, observation: Observation, agent: str) -> int:
-        """関数形式で利用できるようエイリアスを提供 / Allow callable usage."""
-        return self.select_action(observation, agent)

@@ -6,15 +6,9 @@ Interactive script for running self-play matches between baseline agents.
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable
-from pathlib import Path
 
 import numpy as np
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.agents import AgentPolicy, NearestSevensAgent, RandomAgent
 from src.sevens_env import NUM_CARDS, Card, SevensEnv
