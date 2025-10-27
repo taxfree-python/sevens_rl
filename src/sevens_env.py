@@ -258,9 +258,7 @@ class SevensEnv(AECEnv):
                 self.rewards[agent] = self._get_reward_for_rank(rank)
 
                 # 全員終了したらゲーム終了
-                if len(self.finished_order) == self.num_players:
-                    pass  # 全員終了済み
-                elif len(self.finished_order) == self.num_players - 1:
+                if len(self.finished_order) == self.num_players - 1:
                     # 残り1人を自動的に最下位にする
                     for a in self.agents:
                         if a not in self.finished_order:
@@ -274,6 +272,11 @@ class SevensEnv(AECEnv):
 
         # 累積報酬更新
         self._accumulate_rewards()
+
+        # 全員終了後にループを継続させない（自己対局ループでの無限パス対策）
+        if len(self.finished_order) == self.num_players:
+            self.agents = []
+            return
 
         # 次のエージェントを選択 (終了していないエージェント)
         self.agent_selection = self._agent_selector.next()
@@ -290,6 +293,12 @@ class SevensEnv(AECEnv):
         for agent in self.agents:
             self._cumulative_rewards[agent] += self.rewards[agent]
             self.rewards[agent] = 0
+
+    def get_cumulative_reward(self, agent: str) -> float:
+        """累積報酬を取得"""
+        if agent not in self._cumulative_rewards:
+            raise KeyError(f"Unknown agent {agent}")
+        return float(self._cumulative_rewards[agent])
 
     def _was_dead_step(self, action):
         """終了したエージェントがアクションを取った場合"""
