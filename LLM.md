@@ -8,7 +8,7 @@ Reinforcement learning environment for the Japanese card game **Sevens** (七並
 sevens_rl/
 ├── src/
 │   ├── sevens_env.py       # PettingZoo AEC environment implementation
-│   ├── baseline_agents.py  # Rule-based baseline agents
+│   ├── agents/             # Baseline agent policies
 │   └── utils/
 │       └── logger.py       # Logging configuration
 ├── tests/
@@ -140,4 +140,5 @@ Ask the agent to use proper Edit tools instead. These are safer, more trackable,
 
 ## Additional Resources
 
-- See `ToDo.md` for project planning notes (in Japanese)
+- See `README.md` for environment setup, Docker configuration, and usage details
+- See `ToDo.md` and `memo.md` for project planning notes (in Japanese)
