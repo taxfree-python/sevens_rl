@@ -132,6 +132,18 @@ Ask the agent to use proper Edit tools instead. These are safer, more trackable,
 - Presets: `DEFAULT_REWARDS`, `WINNER_TAKES_ALL_REWARDS`, `SPARSE_REWARDS`
 - Use `SevensConfig` dataclass for environment configuration
 
+## Branch Naming
+
+- Branch names must follow the pattern: `feature/<verb>-<description>`
+- Start with a **verb in base form** (e.g., `implement`, `add`, `fix`, `refactor`)
+- Use lowercase with hyphens for word separation
+- Examples:
+  - ✅ `feature/implement-dqn-components`
+  - ✅ `feature/add-evaluation-tools`
+  - ✅ `feature/fix-reward-calculation`
+  - ❌ `feature/dqn-components` (missing verb)
+  - ❌ `feature/implementing-dqn` (gerund, not base form)
+
 ## Commit Guidelines
 
 - Use present-tense, imperative commit subjects (e.g., "Add pass counter", "Fix action mask bug")
