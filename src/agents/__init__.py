@@ -1,8 +1,4 @@
-"""
-エージェントの共通インターフェースとベースライン実装を提供。
-
-Provides baseline agent policies for the Sevens environment.
-"""
+"""Provides baseline agent policies for the Sevens environment."""
 
 from .base import AgentPolicy, Observation
 from .random_policy import RandomAgent

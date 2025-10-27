@@ -1,3 +1,3 @@
-"""Sevens RL - 七並べ強化学習プロジェクト"""
+"""Sevens RL - Reinforcement learning project for the Sevens card game."""
 
 __version__ = "0.1.0"

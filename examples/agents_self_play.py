@@ -1,8 +1,4 @@
-"""
-ベースラインエージェント同士の自己対局を対話的に実行するスクリプト。
-
-Interactive script for running self-play matches between baseline agents.
-"""
+"""Interactive script for running self-play matches between baseline agents."""
 
 from __future__ import annotations
 
@@ -17,6 +13,25 @@ AgentFactory = Callable[[int], AgentPolicy]
 
 
 def _prompt_int(prompt: str, *, default: int, minimum: int, maximum: int) -> int:
+    """
+    Prompt user for integer input with validation.
+
+    Parameters
+    ----------
+    prompt : str
+        Prompt message to display.
+    default : int
+        Default value if user provides no input.
+    minimum : int
+        Minimum valid value.
+    maximum : int
+        Maximum valid value.
+
+    Returns
+    -------
+    int
+        Valid integer input from user.
+    """
     while True:
         raw = input(f"{prompt} [{default}]: ").strip()
         if not raw:
@@ -29,6 +44,23 @@ def _prompt_int(prompt: str, *, default: int, minimum: int, maximum: int) -> int
 
 
 def _prompt_choice(prompt: str, options: dict[str, str], *, default: str) -> str:
+    """
+    Prompt user to select from multiple options.
+
+    Parameters
+    ----------
+    prompt : str
+        Prompt message to display.
+    options : dict[str, str]
+        Available options mapping key to label.
+    default : str
+        Default option if user provides no input.
+
+    Returns
+    -------
+    str
+        Selected option key.
+    """
     option_text = ", ".join(f"{key}({label})" for key, label in options.items())
     while True:
         raw = input(f"{prompt} [{default}] {{{option_text}}}: ").strip().lower()
@@ -40,6 +72,19 @@ def _prompt_choice(prompt: str, options: dict[str, str], *, default: str) -> str
 
 
 def _describe_action(action: int) -> str:
+    """
+    Convert action index to human-readable description.
+
+    Parameters
+    ----------
+    action : int
+        Action index.
+
+    Returns
+    -------
+    str
+        Action description (card representation or "pass").
+    """
     if action == NUM_CARDS:
         return "pass"
     card = Card.from_id(action)
@@ -47,6 +92,19 @@ def _describe_action(action: int) -> str:
 
 
 def _build_factories(seed: int) -> dict[str, AgentFactory]:
+    """
+    Build agent factory functions.
+
+    Parameters
+    ----------
+    seed : int
+        Random seed for agent initialization.
+
+    Returns
+    -------
+    dict[str, AgentFactory]
+        Mapping of agent type to factory function.
+    """
     return {
         "random": lambda idx: RandomAgent(np.random.default_rng(seed + idx)),
         "nearest": lambda idx: NearestSevensAgent(prefer_high_rank=False),
@@ -55,6 +113,7 @@ def _build_factories(seed: int) -> dict[str, AgentFactory]:
 
 
 def main() -> None:
+    """Run interactive self-play demo with baseline agents."""
     print("=" * 60)
     print("七並べ 自己対局デモ (Baseline Agents Self-Play)")
     print("=" * 60)

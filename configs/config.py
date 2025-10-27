@@ -1,8 +1,4 @@
-"""
-Sevens RL Environment Configuration
-
-ゲーム環境のハイパーパラメータ設定
-"""
+"""Sevens RL environment configuration and hyperparameters."""
 
 
 # =============================================================================
@@ -44,7 +40,19 @@ SPARSE_REWARDS = {
 # =============================================================================
 
 class SevensConfig:
-    """七並べ環境の設定クラス"""
+    """
+    Configuration class for Sevens environment.
+
+    Parameters
+    ----------
+    num_players : int, optional
+        Number of players (2-4). Default is 4.
+    reward_config : dict[int, float] or None, optional
+        Reward configuration mapping rank to reward value.
+        If None, uses default rewards. Default is None.
+    render_mode : str or None, optional
+        Rendering mode ('human' or None). Default is None.
+    """
 
     def __init__(
         self,
@@ -52,12 +60,6 @@ class SevensConfig:
         reward_config: dict[int, float] = None,
         render_mode: str = None,
     ):
-        """
-        Args:
-            num_players: プレイヤー数 (2-4)
-            reward_config: 順位別報酬設定 {順位: 報酬値}
-            render_mode: 描画モード ('human' or None)
-        """
         self.num_players = num_players
         self.render_mode = render_mode
 
@@ -68,7 +70,14 @@ class SevensConfig:
             self.reward_config = reward_config
 
     def to_dict(self) -> dict:
-        """設定を辞書形式で取得"""
+        """
+        Get configuration as dictionary.
+
+        Returns
+        -------
+        dict
+            Configuration dictionary.
+        """
         return {
             'num_players': self.num_players,
             'reward_config': self.reward_config,

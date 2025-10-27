@@ -1,13 +1,13 @@
 """
-七並べ (Sevens) environment using PettingZoo AEC API.
+Sevens card game environment using PettingZoo AEC API.
 
-ゲームルール:
-- 52枚のカード (4スート × 13ランク、ジョーカーなし)
-- 各プレイヤーに均等配布
-- 最初に7を出す
-- その後、場に出ているカードに隣接するカードのみ出せる
-- 出せるカードがない、または戦略的に出さない場合はパス
-- 手札を最初になくしたプレイヤーの勝ち
+Game rules:
+- 52 cards (4 suits × 13 ranks, no jokers)
+- Cards are dealt evenly to all players
+- All sevens are placed on the board initially
+- Players can only play cards adjacent to cards already on the board
+- Pass if no valid cards or strategic choice
+- First player to empty their hand wins
 """
 
 import numpy as np
@@ -25,7 +25,16 @@ SEVEN_RANK = 7
 
 
 class Card:
-    """カードクラス"""
+    """
+    Represents a playing card.
+
+    Parameters
+    ----------
+    suit : int
+        Suit index (0-3).
+    rank : int
+        Rank value (1-13, where 1=Ace, 13=King).
+    """
 
     def __init__(self, suit: int, rank: int):
         self.suit = suit  # 0-3
@@ -41,19 +50,50 @@ class Card:
         return hash((self.suit, self.rank))
 
     def to_id(self) -> int:
-        """カードをユニークなID (0-51) に変換"""
+        """
+        Convert card to unique ID (0-51).
+
+        Returns
+        -------
+        int
+            Unique card identifier.
+        """
         return self.suit * 13 + (self.rank - 1)
 
     @staticmethod
     def from_id(card_id: int) -> "Card":
-        """IDからカードを生成"""
+        """
+        Generate card from ID.
+
+        Parameters
+        ----------
+        card_id : int
+            Card identifier (0-51).
+
+        Returns
+        -------
+        Card
+            Card object corresponding to the ID.
+        """
         suit = card_id // 13
         rank = (card_id % 13) + 1
         return Card(suit, rank)
 
 
 class SevensEnv(AECEnv):
-    """七並べ環境 (PettingZoo AEC API)"""
+    """
+    Sevens card game environment (PettingZoo AEC API).
+
+    Parameters
+    ----------
+    num_players : int, optional
+        Number of players (2-4). Default is 4.
+    render_mode : str or None, optional
+        Rendering mode ("human" or None). Default is None.
+    reward_config : dict[int, float] or None, optional
+        Custom reward configuration mapping rank to reward value.
+        If None, uses default reward configuration. Default is None.
+    """
 
     metadata = {
         "render_modes": ["human"],
@@ -106,7 +146,21 @@ class SevensEnv(AECEnv):
         self.reset()
 
     def reset(self, seed: int | None = None, options: dict | None = None):
-        """環境をリセット"""
+        """
+        Reset the environment to initial state.
+
+        Parameters
+        ----------
+        seed : int or None, optional
+            Random seed for reproducibility. Default is None.
+        options : dict or None, optional
+            Additional options. Default is None.
+
+        Returns
+        -------
+        tuple
+            Observation and info for the starting agent.
+        """
         if seed is not None:
             np.random.seed(seed)
 
@@ -143,7 +197,7 @@ class SevensEnv(AECEnv):
         return self.observe(self.agent_selection), self.infos[self.agent_selection]
 
     def _deal_cards(self):
-        """カードをシャッフルして配る"""
+        """Shuffle and deal cards to all players."""
         deck = np.arange(NUM_CARDS)
         np.random.shuffle(deck)
 
@@ -155,10 +209,12 @@ class SevensEnv(AECEnv):
 
     def _place_all_sevens(self) -> str:
         """
-        初期化フェーズ: 全プレイヤーが持っている7を場に出す
+        Initialize game by placing all sevens on the board.
 
-        Returns:
-            str: ダイヤの7を持っていたプレイヤー（先攻プレイヤー）
+        Returns
+        -------
+        str
+            Agent who had the diamond seven (starting player).
         """
         starting_player = None
         diamond_seven_id = Card(2, SEVEN_RANK).to_id()  # ダイヤの7 (suit=2)
@@ -182,7 +238,19 @@ class SevensEnv(AECEnv):
         return starting_player
 
     def observe(self, agent: str) -> dict:
-        """エージェントの観測を取得"""
+        """
+        Get observation for the agent.
+
+        Parameters
+        ----------
+        agent : str
+            Agent identifier.
+
+        Returns
+        -------
+        dict
+            Observation containing board state, hand, and action mask.
+        """
         observation = {
             "board": self.board.copy(),
             "hand": self.hands[agent].copy(),
@@ -191,7 +259,19 @@ class SevensEnv(AECEnv):
         return observation
 
     def _get_action_mask(self, agent: str) -> np.ndarray:
-        """有効なアクションのマスクを取得"""
+        """
+        Get mask of valid actions for the agent.
+
+        Parameters
+        ----------
+        agent : str
+            Agent identifier.
+
+        Returns
+        -------
+        np.ndarray
+            Binary mask indicating valid actions (1=valid, 0=invalid).
+        """
         mask = np.zeros(NUM_CARDS + 1, dtype=np.int8)
 
         # パスは常に可能
@@ -205,7 +285,19 @@ class SevensEnv(AECEnv):
         return mask
 
     def _is_valid_play(self, card_id: int) -> bool:
-        """カードが出せるかチェック"""
+        """
+        Check if a card can be played.
+
+        Parameters
+        ----------
+        card_id : int
+            Card identifier.
+
+        Returns
+        -------
+        bool
+            True if the card can be played, False otherwise.
+        """
         card = Card.from_id(card_id)
 
         # 7は常に出せる (場に出ていなければ)
@@ -225,11 +317,35 @@ class SevensEnv(AECEnv):
         return False
 
     def _get_reward_for_rank(self, rank: int) -> float:
-        """順位に応じた報酬を計算"""
+        """
+        Calculate reward based on rank.
+
+        Parameters
+        ----------
+        rank : int
+            Player's finishing rank (1-indexed).
+
+        Returns
+        -------
+        float
+            Reward value for the rank.
+        """
         return self.reward_config.get(rank, 0.0)
 
     def step(self, action: int):
-        """アクションを実行"""
+        """
+        Execute an action.
+
+        Parameters
+        ----------
+        action : int
+            Action index (0-51 for cards, 52 for pass).
+
+        Raises
+        ------
+        ValueError
+            If the action is invalid for the current agent.
+        """
         if (
             self.terminations[self.agent_selection]
             or self.truncations[self.agent_selection]
@@ -289,19 +405,47 @@ class SevensEnv(AECEnv):
             iter_count += 1
 
     def _accumulate_rewards(self):
-        """報酬を累積"""
+        """Accumulate rewards for all agents."""
         for agent in self.agents:
             self._cumulative_rewards[agent] += self.rewards[agent]
             self.rewards[agent] = 0
 
     def get_cumulative_reward(self, agent: str) -> float:
-        """累積報酬を取得"""
+        """
+        Get cumulative reward for the agent.
+
+        Parameters
+        ----------
+        agent : str
+            Agent identifier.
+
+        Returns
+        -------
+        float
+            Cumulative reward.
+
+        Raises
+        ------
+        KeyError
+            If the agent is unknown.
+        """
         if agent not in self._cumulative_rewards:
             raise KeyError(f"Unknown agent {agent}")
         return float(self._cumulative_rewards[agent])
 
     def _was_dead_step(self, action):
-        """終了したエージェントがアクションを取った場合"""
+        """
+        Handle action from terminated agent.
+
+        Parameters
+        ----------
+        action : int
+            Action attempted by terminated agent.
+
+        Returns
+        -------
+        None
+        """
         # 終了済みエージェントの報酬はリセット
         self.rewards[self.agent_selection] = 0
         self._accumulate_rewards()
@@ -309,7 +453,7 @@ class SevensEnv(AECEnv):
         return None
 
     def render(self):
-        """環境を描画"""
+        """Render the environment state."""
         if self.render_mode != "human":
             return
 

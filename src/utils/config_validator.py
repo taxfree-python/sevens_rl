@@ -12,11 +12,15 @@ def validate_env_config(cfg: DictConfig) -> None:
     """
     Validate environment configuration.
 
-    Args:
-        cfg: Environment configuration from Hydra
+    Parameters
+    ----------
+    cfg : DictConfig
+        Environment configuration from Hydra.
 
-    Raises:
-        ValueError: If configuration is invalid
+    Raises
+    ------
+    ValueError
+        If configuration is invalid.
     """
     if cfg.env.num_players not in [2, 3, 4]:
         raise ValueError(
@@ -36,11 +40,15 @@ def validate_training_config(cfg: DictConfig) -> None:
     """
     Validate training configuration.
 
-    Args:
-        cfg: Training configuration from Hydra
+    Parameters
+    ----------
+    cfg : DictConfig
+        Training configuration from Hydra.
 
-    Raises:
-        ValueError: If configuration is invalid
+    Raises
+    ------
+    ValueError
+        If configuration is invalid.
     """
     if cfg.training.num_episodes <= 0:
         raise ValueError(
@@ -86,11 +94,15 @@ def validate_network_config(cfg: DictConfig) -> None:
     """
     Validate network configuration.
 
-    Args:
-        cfg: Network configuration from Hydra
+    Parameters
+    ----------
+    cfg : DictConfig
+        Network configuration from Hydra.
 
-    Raises:
-        ValueError: If configuration is invalid
+    Raises
+    ------
+    ValueError
+        If configuration is invalid.
     """
     if not cfg.network.hidden_layers:
         raise ValueError("network.hidden_layers cannot be empty")
@@ -118,11 +130,15 @@ def validate_experiment_config(cfg: DictConfig) -> None:
     """
     Validate experiment configuration.
 
-    Args:
-        cfg: Experiment configuration from Hydra
+    Parameters
+    ----------
+    cfg : DictConfig
+        Experiment configuration from Hydra.
 
-    Raises:
-        ValueError: If configuration is invalid
+    Raises
+    ------
+    ValueError
+        If configuration is invalid.
     """
     if cfg.experiment.seed < 0:
         raise ValueError(f"experiment.seed must be >= 0, got {cfg.experiment.seed}")
@@ -142,11 +158,15 @@ def validate_config(cfg: DictConfig) -> None:
     """
     Validate all configuration sections.
 
-    Args:
-        cfg: Full Hydra configuration
+    Parameters
+    ----------
+    cfg : DictConfig
+        Full Hydra configuration.
 
-    Raises:
-        ValueError: If any configuration is invalid
+    Raises
+    ------
+    ValueError
+        If any configuration is invalid.
     """
     validate_env_config(cfg)
     validate_training_config(cfg)
