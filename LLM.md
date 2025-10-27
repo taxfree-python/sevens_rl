@@ -140,5 +140,4 @@ Ask the agent to use proper Edit tools instead. These are safer, more trackable,
 
 ## Additional Resources
 
-- See `CLAUDE.md` for detailed environment setup, Docker configuration, and implementation details
-- See `ToDo.md` and `memo.md` for project planning notes (in Japanese)
+- See `ToDo.md` for project planning notes (in Japanese)
