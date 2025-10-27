@@ -105,14 +105,14 @@ def main() -> None:
     print(f"総ターン数: {step_count}")
     print("順位:")
     for rank, agent in enumerate(env.finished_order, start=1):
-        reward = env._cumulative_rewards.get(agent, 0.0)
+        reward = env.get_cumulative_reward(agent)
         print(f"  {rank}位: {agent} (報酬: {reward:+.1f})")
 
     remaining = set(env.possible_agents) - set(env.finished_order)
     if remaining:
         print("未完了:")
         for agent in remaining:
-            reward = env._cumulative_rewards.get(agent, 0.0)
+            reward = env.get_cumulative_reward(agent)
             print(f"  - {agent} (報酬: {reward:+.1f})")
 
 

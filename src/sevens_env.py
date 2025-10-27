@@ -294,6 +294,12 @@ class SevensEnv(AECEnv):
             self._cumulative_rewards[agent] += self.rewards[agent]
             self.rewards[agent] = 0
 
+    def get_cumulative_reward(self, agent: str) -> float:
+        """累積報酬を取得"""
+        if agent not in self._cumulative_rewards:
+            raise KeyError(f"Unknown agent {agent}")
+        return float(self._cumulative_rewards[agent])
+
     def _was_dead_step(self, action):
         """終了したエージェントがアクションを取った場合"""
         # 終了済みエージェントの報酬はリセット
