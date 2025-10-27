@@ -26,8 +26,10 @@ def main(cfg: DictConfig) -> None:
     """
     Main function demonstrating logging and configuration.
 
-    Args:
-        cfg: Hydra configuration loaded from configs/default.yaml
+    Parameters
+    ----------
+    cfg : DictConfig
+        Hydra configuration loaded from configs/default.yaml.
     """
     # Validate configuration
     validate_config(cfg)

@@ -14,14 +14,20 @@ def get_log_level(level: int | str) -> int:
     """
     Convert log level string to logging constant.
 
-    Args:
-        level: Log level as int (logging.INFO) or string ("INFO")
+    Parameters
+    ----------
+    level : int or str
+        Log level as int (logging.INFO) or string ("INFO").
 
-    Returns:
-        Logging level constant (int)
+    Returns
+    -------
+    int
+        Logging level constant.
 
-    Raises:
-        ValueError: If level string is invalid
+    Raises
+    ------
+    ValueError
+        If level string is invalid.
     """
     if isinstance(level, int):
         return level
@@ -55,24 +61,36 @@ def setup_logger(
     """
     Set up a logger with console and optional file output.
 
-    Args:
-        name: Logger name (typically module name or 'sevens_rl')
-        level: Logging level (int or string: DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optional path to log file
-        format_string: Custom format string for log messages
-        use_rotation: Use RotatingFileHandler instead of FileHandler
-        max_bytes: Maximum bytes per log file (used if use_rotation=True)
-        backup_count: Number of backup files to keep (used if use_rotation=True)
+    Parameters
+    ----------
+    name : str, optional
+        Logger name (typically module name or 'sevens_rl'). Default is 'sevens_rl'.
+    level : int or str, optional
+        Logging level (int or string: DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        Default is logging.INFO.
+    log_file : str, Path, or None, optional
+        Optional path to log file. Default is None.
+    format_string : str or None, optional
+        Custom format string for log messages. Default is None.
+    use_rotation : bool, optional
+        Use RotatingFileHandler instead of FileHandler. Default is False.
+    max_bytes : int, optional
+        Maximum bytes per log file (used if use_rotation=True). Default is 10MB.
+    backup_count : int, optional
+        Number of backup files to keep (used if use_rotation=True). Default is 5.
 
-    Returns:
-        Configured logger instance
+    Returns
+    -------
+    logging.Logger
+        Configured logger instance.
 
-    Example:
-        >>> logger = setup_logger("training", level="INFO", log_file="logs/train.log")
-        >>> logger.info("Training started")
-        >>> # With rotation
-        >>> logger = setup_logger("training", level="DEBUG", log_file="logs/train.log",
-        ...                       use_rotation=True, max_bytes=10*1024*1024)
+    Examples
+    --------
+    >>> logger = setup_logger("training", level="INFO", log_file="logs/train.log")
+    >>> logger.info("Training started")
+    >>> # With rotation
+    >>> logger = setup_logger("training", level="DEBUG", log_file="logs/train.log",
+    ...                       use_rotation=True, max_bytes=10*1024*1024)
     """
     # Convert level string to int if needed
     level = get_log_level(level)
@@ -123,16 +141,21 @@ def get_logger(name: str = "sevens_rl") -> logging.Logger:
     """
     Get an existing logger or create a new one with default settings.
 
-    Args:
-        name: Logger name
+    Parameters
+    ----------
+    name : str, optional
+        Logger name. Default is 'sevens_rl'.
 
-    Returns:
-        Logger instance
+    Returns
+    -------
+    logging.Logger
+        Logger instance.
 
-    Example:
-        >>> from src.utils import get_logger
-        >>> logger = get_logger(__name__)
-        >>> logger.info("Message from module")
+    Examples
+    --------
+    >>> from src.utils import get_logger
+    >>> logger = get_logger(__name__)
+    >>> logger.info("Message from module")
     """
     logger = logging.getLogger(name)
 

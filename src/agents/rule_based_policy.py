@@ -1,8 +1,4 @@
-"""
-シンプルなルールベースエージェント。
-
-Rule-based agent that prefers cards near the seven.
-"""
+"""Rule-based agent that prefers cards near the seven."""
 
 from __future__ import annotations
 
@@ -14,24 +10,47 @@ from .base import AgentPolicy, Observation
 
 
 class NearestSevensAgent(AgentPolicy):
-    """7に近いカードを優先して出す戦略。"""
+    """
+    Strategy that prioritizes playing cards closest to rank 7.
+
+    Parameters
+    ----------
+    prefer_high_rank : bool, optional
+        When multiple cards have the same distance from 7, prefer higher-ranked cards.
+        If False, prefer lower-ranked cards. Default is False.
+    name : str or None, optional
+        Name of the agent. Defaults to the class name if not provided.
+    """
 
     def __init__(
         self,
         prefer_high_rank: bool = False,
         name: str | None = None,
     ) -> None:
-        """ルールの詳細を構成する。
-
-        Args:
-            prefer_high_rank: 7からの距離が同じカードが複数ある場合に、高ランク側を優先するか。
-                False の場合は低ランク側を優先する。
-            name: エージェント名称（省略時はクラス名）。
-        """
         super().__init__(name)
         self.prefer_high_rank = prefer_high_rank
 
     def select_action(self, observation: Observation, agent: str) -> int:
+        """
+        Select the card closest to rank 7, or pass if no cards are playable.
+
+        Parameters
+        ----------
+        observation : Observation
+            Current game state observation containing action_mask.
+        agent : str
+            Agent identifier.
+
+        Returns
+        -------
+        int
+            Action index of the card closest to 7, or pass action if no cards are playable.
+
+        Raises
+        ------
+        ValueError
+            If action_mask is missing, empty, or no legal action exists.
+        """
         action_mask_array = observation.get("action_mask")
         if action_mask_array is None:
             raise ValueError(f"action_mask is missing for agent {agent}")
@@ -51,6 +70,20 @@ class NearestSevensAgent(AgentPolicy):
         raise ValueError(f"No legal action (including pass) for agent {agent}")
 
     def _priority(self, card_id: int) -> tuple[int, int]:
+        """
+        Calculate priority for card selection.
+
+        Parameters
+        ----------
+        card_id : int
+            Card identifier.
+
+        Returns
+        -------
+        tuple[int, int]
+            Priority tuple (distance_from_7, tie_breaker_rank).
+            Lower values indicate higher priority.
+        """
         card = Card.from_id(int(card_id))
         distance = abs(card.rank - SEVEN_RANK)
         tie_breaker = -card.rank if self.prefer_high_rank else card.rank
