@@ -54,7 +54,6 @@ def test_random_agent_requires_action_mask():
         agent.select_action(obs, "player_0")
 
 
-
 def test_random_agent_rejects_empty_mask():
     agent = RandomAgent(np.random.default_rng(0))
     obs: Observation = {
@@ -107,7 +106,6 @@ def test_nearest_sevens_agent_raises_without_any_action():
         agent.select_action(obs, "player_4")
 
 
-
 def test_nearest_sevens_agent_requires_action_mask():
     agent = NearestSevensAgent()
     obs: Observation = {
@@ -117,7 +115,6 @@ def test_nearest_sevens_agent_requires_action_mask():
 
     with pytest.raises(ValueError, match="missing"):
         agent.select_action(obs, "player_5")
-
 
 
 def test_nearest_sevens_agent_rejects_empty_mask():

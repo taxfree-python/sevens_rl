@@ -23,4 +23,3 @@ class AgentPolicy(ABC):
     @abstractmethod
     def select_action(self, observation: Observation, agent: str) -> int:
         """行動を選択する / Select an action for the given agent."""
-
