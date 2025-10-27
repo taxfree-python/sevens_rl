@@ -258,9 +258,7 @@ class SevensEnv(AECEnv):
                 self.rewards[agent] = self._get_reward_for_rank(rank)
 
                 # 全員終了したらゲーム終了
-                if len(self.finished_order) == self.num_players:
-                    pass  # 全員終了済み
-                elif len(self.finished_order) == self.num_players - 1:
+                if len(self.finished_order) == self.num_players - 1:
                     # 残り1人を自動的に最下位にする
                     for a in self.agents:
                         if a not in self.finished_order:
@@ -274,6 +272,10 @@ class SevensEnv(AECEnv):
 
         # 累積報酬更新
         self._accumulate_rewards()
+
+        if len(self.finished_order) == self.num_players:
+            self.agents = []
+            return
 
         # 次のエージェントを選択 (終了していないエージェント)
         self.agent_selection = self._agent_selector.next()
