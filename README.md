@@ -36,12 +36,14 @@ from sevens_env import SevensEnv
 
 env = SevensEnv(num_players=4)
 obs, info = env.reset(seed=0)
-agent = env.agent_selection
 
 while env.agents:
+    agent = env.agent_selection  # 現在行動中のプレイヤー
     mask = obs["action_mask"]
     action = mask.argmax()  # ここでは最初に可能な行動を選択
-    obs, reward, termination, truncation, info = env.step(action)
+    env.step(action)
+    if env.agents:
+        obs = env.observe(env.agent_selection)
 ```
 インタラクティブなスモークテストは `python tests/test_env.py`、より詳細な報酬テストは `python -m tests.test_custom_rewards` を参照してください。
 
@@ -54,13 +56,14 @@ from src.sevens_env import SevensEnv
 
 env = SevensEnv(num_players=4)
 obs, _ = env.reset(seed=1)
-agent_id = env.agent_selection
 
 policy = RandomAgent()  # または NearestSevensAgent()
 while env.agents:
-    action = policy.select_action(obs, agent_id)
-    obs, reward, terminated, truncated, info = env.step(action)
     agent_id = env.agent_selection
+    action = policy.select_action(obs, agent_id)
+    env.step(action)
+    if env.agents:
+        obs = env.observe(env.agent_selection)
 
 print(env.finished_order)
 ```
