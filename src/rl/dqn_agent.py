@@ -5,6 +5,8 @@ This module provides a DQN agent that can learn to play Sevens through
 reinforcement learning with experience replay and target networks.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -30,6 +32,8 @@ class DQNAgent(AgentPolicy):
         Dimension of flattened state observation.
     action_dim : int
         Number of possible actions.
+    name : str or None, optional
+        Human-readable identifier for the agent. Defaults to class name.
     hidden_layers : list of int, optional
         Hidden layer sizes for Q-network. Default is [512, 256, 128].
     learning_rate : float, optional
@@ -81,6 +85,7 @@ class DQNAgent(AgentPolicy):
         self,
         state_dim: int,
         action_dim: int,
+        name: str | None = None,
         hidden_layers: list[int] = None,
         learning_rate: float = 0.0001,
         gamma: float = 0.95,
@@ -96,6 +101,7 @@ class DQNAgent(AgentPolicy):
         device: str = "cpu",
         seed: int = None,
     ):
+        super().__init__(name=name)
         if hidden_layers is None:
             hidden_layers = [512, 256, 128]
 
@@ -251,7 +257,9 @@ class DQNAgent(AgentPolicy):
                 )
             else:
                 # Standard DQN: use target network for both selection and evaluation
-                next_q_values = self.target_network(next_states_t).max(dim=1)[0].unsqueeze(1)
+                next_q_values = (
+                    self.target_network(next_states_t).max(dim=1)[0].unsqueeze(1)
+                )
 
             target_q_values = rewards_t.unsqueeze(1) + (
                 self.gamma * next_q_values * (1 - dones_t.unsqueeze(1))

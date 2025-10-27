@@ -95,7 +95,9 @@ def test_dqn_agent_store_experience(dqn_agent):
 
     initial_buffer_size = len(dqn_agent.replay_buffer)
 
-    dqn_agent.store_experience(state, action=0, reward=1.0, next_state=next_state, done=False)
+    dqn_agent.store_experience(
+        state, action=0, reward=1.0, next_state=next_state, done=False
+    )
 
     assert len(dqn_agent.replay_buffer) == initial_buffer_size + 1
     assert dqn_agent.total_steps == 1
@@ -205,7 +207,9 @@ def test_dqn_agent_save_load(dqn_agent):
         # Check that states match
         assert new_agent.episode_count == dqn_agent.episode_count
         assert new_agent.total_steps == dqn_agent.total_steps
-        assert abs(new_agent.policy.get_epsilon() - dqn_agent.policy.get_epsilon()) < 1e-6
+        assert (
+            abs(new_agent.policy.get_epsilon() - dqn_agent.policy.get_epsilon()) < 1e-6
+        )
 
 
 def test_dqn_agent_double_dqn():

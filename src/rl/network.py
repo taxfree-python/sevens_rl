@@ -74,11 +74,13 @@ class QNetwork(nn.Module):
         layers = []
         prev_dim = input_dim
         for hidden_dim in hidden_layers:
-            layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                act_fn(),
-                nn.Dropout(dropout),
-            ])
+            layers.extend(
+                [
+                    nn.Linear(prev_dim, hidden_dim),
+                    act_fn(),
+                    nn.Dropout(dropout),
+                ]
+            )
             prev_dim = hidden_dim
 
         self.features = nn.Sequential(*layers)

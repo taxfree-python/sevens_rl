@@ -96,13 +96,16 @@ class ReplayBuffer:
                 f"with only {len(self.buffer)} experiences"
             )
 
+        # Convert to list once so index access is O(1)
+        experiences = list(self.buffer)
+
         # Sample indices without replacement
-        indices = self.rng.choice(len(self.buffer), size=batch_size, replace=False)
+        indices = self.rng.choice(len(experiences), size=batch_size, replace=False)
 
         # Gather experiences
         states, actions, rewards, next_states, dones = [], [], [], [], []
         for idx in indices:
-            state, action, reward, next_state, done = self.buffer[idx]
+            state, action, reward, next_state, done = experiences[idx]
             states.append(state)
             actions.append(action)
             rewards.append(reward)
