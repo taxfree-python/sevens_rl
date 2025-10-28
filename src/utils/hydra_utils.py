@@ -66,10 +66,12 @@ def create_dqn_agent_from_config(
     >>> cfg = load_config("configs/train_dqn.yaml")
     >>> agent = create_dqn_agent_from_config(cfg, state_dim=157, action_dim=53)
     """
-    # Extract training parameters
+    # Support configs that either provide agent parameters at the top level
+    # or under an `agent` section.
+    agent_cfg = cfg.get("agent", cfg)
     training_cfg = cfg.get("training", {})
-    network_cfg = cfg.get("network", {})
-    training_opts_cfg = cfg.get("training_opts", {})
+    network_cfg = cfg.get("network", agent_cfg)
+    training_opts_cfg = cfg.get("training_opts", agent_cfg)
     experiment_cfg = cfg.get("experiment", {})
 
     # Create agent with config parameters
@@ -77,19 +79,42 @@ def create_dqn_agent_from_config(
         state_dim=state_dim,
         action_dim=action_dim,
         hidden_layers=network_cfg.get("hidden_layers", [512, 256, 128]),
-        learning_rate=training_cfg.get("learning_rate", 0.0001),
-        gamma=training_cfg.get("gamma", 0.95),
-        replay_buffer_size=training_cfg.get("replay_buffer_size", 100000),
-        batch_size=training_cfg.get("batch_size", 128),
-        target_update_freq=training_cfg.get("target_update_freq", 20),
-        epsilon_start=training_cfg.get("epsilon_start", 1.0),
-        epsilon_end=training_cfg.get("epsilon_end", 0.05),
-        epsilon_decay=training_cfg.get("epsilon_decay", 0.999),
-        double_dqn=training_opts_cfg.get("double_dqn", True),
-        dueling=network_cfg.get("dueling", False),
-        gradient_clip=training_opts_cfg.get("gradient_clip", 1.0),
-        device=experiment_cfg.get("device", "cpu"),
-        seed=experiment_cfg.get("seed", None),
+        learning_rate=agent_cfg.get(
+            "learning_rate", training_cfg.get("learning_rate", 0.0001)
+        ),
+        gamma=agent_cfg.get("gamma", training_cfg.get("gamma", 0.95)),
+        replay_buffer_size=agent_cfg.get(
+            "replay_buffer_size",
+            agent_cfg.get("buffer_size", training_cfg.get("replay_buffer_size", 100000)),
+        ),
+        batch_size=agent_cfg.get("batch_size", training_cfg.get("batch_size", 128)),
+        target_update_freq=agent_cfg.get(
+            "target_update_freq", training_cfg.get("target_update_freq", 20)
+        ),
+        epsilon_start=agent_cfg.get(
+            "epsilon_start", training_cfg.get("epsilon_start", 1.0)
+        ),
+        epsilon_end=agent_cfg.get("epsilon_end", training_cfg.get("epsilon_end", 0.05)),
+        epsilon_decay=agent_cfg.get(
+            "epsilon_decay", training_cfg.get("epsilon_decay", 0.999)
+        ),
+        double_dqn=agent_cfg.get(
+            "double_dqn", training_opts_cfg.get("double_dqn", True)
+        ),
+        dueling=agent_cfg.get("dueling_dqn", network_cfg.get("dueling", False)),
+        gradient_clip=agent_cfg.get(
+            "gradient_clip_norm", training_opts_cfg.get("gradient_clip", 1.0)
+        ),
+        device=agent_cfg.get("device", experiment_cfg.get("device", "cpu")),
+        seed=agent_cfg.get("seed", experiment_cfg.get("seed", None)),
+        activation=agent_cfg.get(
+            "activation", network_cfg.get("activation", "relu")
+        ),
+        dropout=agent_cfg.get("dropout", network_cfg.get("dropout", 0.2)),
+        tau=agent_cfg.get("tau", training_opts_cfg.get("tau", None)),
+        epsilon_decay_strategy=agent_cfg.get(
+            "epsilon_decay_strategy", training_cfg.get("epsilon_decay_strategy", "exponential")
+        ),
     )
 
     return agent
@@ -110,11 +135,16 @@ def get_training_params(cfg: DictConfig) -> dict[str, Any]:
         Dictionary of training parameters.
     """
     training_cfg = cfg.get("training", {})
+    agent_cfg = cfg.get("agent", {})
 
     return {
         "num_episodes": training_cfg.get("num_episodes", 10000),
-        "batch_size": training_cfg.get("batch_size", 128),
-        "min_replay_size": training_cfg.get("min_replay_size", 1000),
+        "batch_size": training_cfg.get(
+            "batch_size", agent_cfg.get("batch_size", 128)
+        ),
+        "min_replay_size": training_cfg.get(
+            "min_replay_size", agent_cfg.get("min_buffer_size", 1000)
+        ),
     }
 
 

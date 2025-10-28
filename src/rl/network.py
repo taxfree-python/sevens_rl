@@ -26,7 +26,7 @@ class QNetwork(nn.Module):
     hidden_layers : list of int, optional
         List of hidden layer sizes. Default is [512, 256, 128].
     activation : str, optional
-        Activation function ('relu', 'tanh', 'elu'). Default is 'relu'.
+        Activation function ('relu', 'tanh', 'elu', 'leaky_relu', 'selu'). Default is 'relu'.
     dropout : float, optional
         Dropout rate for regularization. Default is 0.2.
     dueling : bool, optional
@@ -67,6 +67,8 @@ class QNetwork(nn.Module):
             "relu": nn.ReLU,
             "tanh": nn.Tanh,
             "elu": nn.ELU,
+            "leaky_relu": nn.LeakyReLU,
+            "selu": nn.SELU,
         }
         act_fn = activation_map.get(activation.lower(), nn.ReLU)
 

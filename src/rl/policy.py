@@ -23,9 +23,11 @@ class EpsilonGreedyPolicy:
     epsilon_end : float, optional
         Minimum exploration rate. Default is 0.01.
     epsilon_decay : float, optional
-        Multiplicative decay factor per step. Default is 0.995.
+        Decay factor per step. Meaning depends on decay_strategy.
     seed : int or None, optional
         Random seed for reproducibility. Default is None.
+    decay_strategy : str, optional
+        Decay schedule: 'exponential' (multiplicative) or 'linear'. Default is 'exponential'.
 
     Attributes
     ----------
@@ -47,12 +49,26 @@ class EpsilonGreedyPolicy:
         epsilon_end: float = 0.01,
         epsilon_decay: float = 0.995,
         seed: int = None,
+        decay_strategy: str = "exponential",
     ):
         self.epsilon = epsilon_start
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end
         self.epsilon_decay = epsilon_decay
         self.rng = np.random.default_rng(seed)
+        self.decay_strategy = decay_strategy.lower()
+
+        if self.decay_strategy not in {"exponential", "linear"}:
+            raise ValueError(
+                f"Unsupported decay_strategy={decay_strategy}. "
+                "Choose 'exponential' or 'linear'."
+            )
+
+        if self.decay_strategy == "linear":
+            step = (self.epsilon_start - self.epsilon_end) * (1 - self.epsilon_decay)
+            self._linear_decay_step = max(step, 0.0)
+        else:
+            self._linear_decay_step = 0.0
 
     def select_action(
         self,
@@ -109,7 +125,10 @@ class EpsilonGreedyPolicy:
 
         Epsilon is multiplied by decay factor but clamped to epsilon_end.
         """
-        self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+        if self.decay_strategy == "exponential":
+            self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+        else:
+            self.epsilon = max(self.epsilon_end, self.epsilon - self._linear_decay_step)
 
     def reset(self) -> None:
         """Reset epsilon to initial value."""

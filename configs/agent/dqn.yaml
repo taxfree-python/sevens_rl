@@ -22,7 +22,7 @@ min_buffer_size: 1000  # Minimum experiences before training starts
 replay_buffer_size: 100000  # Alias for buffer_size (for backward compatibility)
 
 # Training configuration
-target_update_freq: 1  # Update target network every N steps
+target_update_freq: 1  # Update target network every N episodes
 gradient_clip_norm: 1.0
 prioritized_replay: false
 alpha: 0.6  # Prioritized replay alpha (only used if prioritized_replay=true)

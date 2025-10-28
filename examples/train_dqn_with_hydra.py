@@ -8,13 +8,13 @@ Usage:
     python examples/train_dqn_with_hydra.py
 
     # Override specific parameters
-    python examples/train_dqn_with_hydra.py agent.learning_rate=0.001 agent.batch_size=128
+    python examples/train_dqn_with_hydra.py learning_rate=0.001 batch_size=128
 
     # Use different config file
     python examples/train_dqn_with_hydra.py --config-name=train_dqn
 
     # Run multiple experiments with different hyperparameters
-    python examples/train_dqn_with_hydra.py -m agent.learning_rate=0.0001,0.001 agent.gamma=0.95,0.99
+    python examples/train_dqn_with_hydra.py -m learning_rate=0.0001,0.001 gamma=0.95,0.99
 """
 
 from __future__ import annotations

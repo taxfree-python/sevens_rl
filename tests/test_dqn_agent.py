@@ -255,6 +255,31 @@ def test_dqn_agent_gradient_clip():
     assert agent_with_clip.gradient_clip == 1.0
     assert agent_without_clip.gradient_clip == 0.0
 
+    # Ensure training still updates parameters when clipping disabled
+    state = {
+        "board": np.zeros(52, dtype=np.int8),
+        "hand": np.zeros(52, dtype=np.int8),
+        "action_mask": np.ones(53, dtype=np.int8),
+    }
+
+    for i in range(agent_without_clip.batch_size + 5):
+        agent_without_clip.store_experience(
+            state=state,
+            action=i % 53,
+            reward=float(i),
+            next_state=state,
+            done=False,
+        )
+
+    params_before = [p.clone() for p in agent_without_clip.q_network.parameters()]
+    agent_without_clip.train_step()
+    params_after = list(agent_without_clip.q_network.parameters())
+
+    assert any(
+        not torch.equal(before, after)
+        for before, after in zip(params_before, params_after, strict=True)
+    )
+
 
 def test_dqn_agent_observation_to_state(dqn_agent):
     """Test observation to state conversion."""
@@ -325,3 +350,40 @@ def test_dqn_agent_epsilon_decay_during_training(dqn_agent):
 
     # Epsilon should have decayed
     assert final_epsilon < initial_epsilon
+
+
+def test_dqn_agent_soft_update_tau():
+    """Test that tau performs soft updates instead of hard copy."""
+    agent = create_test_agent(tau=0.5)
+
+    # Modify Q-network
+    for param in agent.q_network.parameters():
+        param.data.add_(torch.randn_like(param) * 0.1)
+
+    initial_target_params = [p.clone() for p in agent.target_network.parameters()]
+    agent.update_target_network()
+    updated_target_params = list(agent.target_network.parameters())
+
+    # Soft update should move parameters but not copy exactly
+    assert any(
+        not torch.equal(initial, updated)
+        for initial, updated in zip(initial_target_params, updated_target_params, strict=True)
+    )
+    assert any(
+        not torch.equal(updated, current)
+        for updated, current in zip(updated_target_params, agent.q_network.parameters(), strict=True)
+    )
+
+
+def test_dqn_agent_linear_epsilon_decay_strategy():
+    """Test DQN agent with linear epsilon decay strategy."""
+    agent = create_test_agent(
+        epsilon_decay_strategy="linear",
+        epsilon_decay=0.99,
+    )
+
+    before = agent.policy.get_epsilon()
+    agent.policy.decay()
+    after = agent.policy.get_epsilon()
+
+    assert after < before

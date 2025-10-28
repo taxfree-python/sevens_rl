@@ -74,7 +74,7 @@ def test_qnetwork_activation_functions():
     input_dim = 157
     output_dim = 53
 
-    activations = ["relu", "tanh", "elu"]
+    activations = ["relu", "tanh", "elu", "leaky_relu", "selu"]
     for act in activations:
         network = QNetwork(
             input_dim=input_dim,

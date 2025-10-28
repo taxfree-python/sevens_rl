@@ -88,7 +88,7 @@ def test_epsilon_greedy_decay():
 
     # Decay once
     policy.decay()
-    assert policy.epsilon == epsilon_start * epsilon_decay
+    assert policy.epsilon == pytest.approx(epsilon_start * epsilon_decay)
 
     # Decay many times
     for _ in range(1000):
@@ -210,3 +210,23 @@ def test_epsilon_greedy_mixed_strategy():
     # Allow for some statistical variation
     expected_ratio = (1 - epsilon) + (epsilon / len(q_values))
     assert abs(greedy_ratio - expected_ratio) < 0.05
+
+
+def test_epsilon_greedy_linear_decay():
+    """Test linear epsilon decay strategy."""
+    policy = EpsilonGreedyPolicy(
+        epsilon_start=1.0,
+        epsilon_end=0.1,
+        epsilon_decay=0.99,
+        decay_strategy="linear",
+    )
+
+    policy.decay()
+    expected_step = (1.0 - 0.1) * (1 - 0.99)
+    assert policy.get_epsilon() == pytest.approx(1.0 - expected_step)
+
+
+def test_epsilon_greedy_invalid_decay_strategy():
+    """Invalid decay strategy should raise ValueError."""
+    with pytest.raises(ValueError):
+        EpsilonGreedyPolicy(decay_strategy="unsupported")

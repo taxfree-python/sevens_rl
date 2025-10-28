@@ -62,6 +62,14 @@ class DQNAgent(AgentPolicy):
         Human-readable identifier for the agent. Defaults to class name.
     seed : int or None, optional
         Random seed for reproducibility. Defaults to None.
+    activation : str, optional
+        Activation function for Q-network hidden layers.
+    dropout : float, optional
+        Dropout probability for Q-network hidden layers.
+    tau : float or None, optional
+        Soft-update factor for target network (None disables soft updates).
+    epsilon_decay_strategy : str, optional
+        Epsilon decay schedule ('exponential' or 'linear').
 
     Attributes
     ----------
@@ -100,6 +108,10 @@ class DQNAgent(AgentPolicy):
         device: str,
         name: str | None = None,
         seed: int | None = None,
+        activation: str = "relu",
+        dropout: float = 0.2,
+        tau: float | None = None,
+        epsilon_decay_strategy: str = "exponential",
     ):
         super().__init__(name=name)
 
@@ -111,6 +123,9 @@ class DQNAgent(AgentPolicy):
         self.double_dqn = double_dqn
         self.gradient_clip = gradient_clip
         self.device = torch.device(device)
+        self.tau = tau
+        self.activation = activation
+        self.dropout = dropout
 
         # Set random seed
         if seed is not None:
@@ -123,6 +138,8 @@ class DQNAgent(AgentPolicy):
             output_dim=action_dim,
             hidden_layers=hidden_layers,
             dueling=dueling,
+            activation=activation,
+            dropout=dropout,
         ).to(self.device)
 
         self.target_network = QNetwork(
@@ -130,6 +147,8 @@ class DQNAgent(AgentPolicy):
             output_dim=action_dim,
             hidden_layers=hidden_layers,
             dueling=dueling,
+            activation=activation,
+            dropout=dropout,
         ).to(self.device)
 
         # Copy weights from Q-network to target network
@@ -148,6 +167,7 @@ class DQNAgent(AgentPolicy):
             epsilon_end=epsilon_end,
             epsilon_decay=epsilon_decay,
             seed=seed,
+            decay_strategy=epsilon_decay_strategy,
         )
 
         # Training statistics
@@ -271,7 +291,7 @@ class DQNAgent(AgentPolicy):
         loss.backward()
 
         # Gradient clipping if specified
-        if self.gradient_clip is not None:
+        if self.gradient_clip is not None and self.gradient_clip > 0:
             nn.utils.clip_grad_norm_(self.q_network.parameters(), self.gradient_clip)
 
         self.optimizer.step()
@@ -288,7 +308,15 @@ class DQNAgent(AgentPolicy):
 
     def update_target_network(self) -> None:
         """Update target network by copying weights from Q-network."""
-        self.target_network.load_state_dict(self.q_network.state_dict())
+        if self.tau is not None and 0 < self.tau < 1:
+            for target_param, param in zip(
+                self.target_network.parameters(), self.q_network.parameters()
+            ):
+                target_param.data.copy_(
+                    self.tau * param.data + (1.0 - self.tau) * target_param.data
+                )
+        else:
+            self.target_network.load_state_dict(self.q_network.state_dict())
 
     def end_episode(self) -> None:
         """
