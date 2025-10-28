@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import hydra
 import numpy as np
@@ -75,7 +74,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     logger.info(f"Agent created with epsilon={agent.policy.get_epsilon():.3f}")
-    logger.info(f"Agent parameters from Hydra config:")
+    logger.info("Agent parameters from Hydra config:")
     logger.info(f"  - Learning rate: {cfg.learning_rate}")
     logger.info(f"  - Gamma: {cfg.gamma}")
     logger.info(f"  - Batch size: {cfg.batch_size}")
