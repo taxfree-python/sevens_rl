@@ -69,6 +69,10 @@ def main(cfg: DictConfig) -> None:
         double_dqn=cfg.double_dqn,
         dueling=cfg.dueling_dqn,
         gradient_clip=cfg.gradient_clip_norm,
+        activation=cfg.activation,
+        dropout=cfg.dropout,
+        tau=cfg.tau,
+        epsilon_decay_strategy=cfg.epsilon_decay_strategy,
         device=cfg.device,
         seed=cfg.seed,
     )
