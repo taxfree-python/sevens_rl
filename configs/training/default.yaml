@@ -1,0 +1,6 @@
+# Generic training loop hyperparameters for Sevens RL experiments.
+
+num_episodes: 10000
+eval_freq: 100
+save_freq: 1000
+log_freq: 10

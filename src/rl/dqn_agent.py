@@ -310,7 +310,7 @@ class DQNAgent(AgentPolicy):
         """Update target network by copying weights from Q-network."""
         if self.tau is not None and 0 < self.tau < 1:
             for target_param, param in zip(
-                self.target_network.parameters(), self.q_network.parameters()
+                self.target_network.parameters(), self.q_network.parameters(), strict=True
             ):
                 target_param.data.copy_(
                     self.tau * param.data + (1.0 - self.tau) * target_param.data

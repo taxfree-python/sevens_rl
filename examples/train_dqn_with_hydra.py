@@ -3,18 +3,16 @@
 This script demonstrates how to train a DQN agent using Hydra for
 managing hyperparameters and experiment configurations.
 
-Usage:
-    # Train with default config
+Example usage::
+
+    # Train with default configuration bundle
     python examples/train_dqn_with_hydra.py
 
-    # Override specific parameters
-    python examples/train_dqn_with_hydra.py learning_rate=0.001 batch_size=128
+    # Override algorithm hyperparameters
+    python examples/train_dqn_with_hydra.py algorithm.learning_rate=0.001 algorithm.batch_size=128
 
-    # Use different config file
-    python examples/train_dqn_with_hydra.py --config-name=train_dqn
-
-    # Run multiple experiments with different hyperparameters
-    python examples/train_dqn_with_hydra.py -m learning_rate=0.0001,0.001 gamma=0.95,0.99
+    # Launch a sweep across multiple values
+    python examples/train_dqn_with_hydra.py -m algorithm.learning_rate=0.0001,0.001 algorithm.epsilon_decay=0.995,0.999
 """
 
 from __future__ import annotations
@@ -30,7 +28,7 @@ from src.rl.dqn_agent import DQNAgent
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="../configs/agent", config_name="dqn")
+@hydra.main(version_base=None, config_path="../configs", config_name="train")
 def main(cfg: DictConfig) -> None:
     """Train a DQN agent using Hydra configuration.
 
@@ -39,13 +37,13 @@ def main(cfg: DictConfig) -> None:
     cfg : DictConfig
         Hydra configuration.
     """
-    # Print configuration
-    logger.info("Training configuration:")
-    logger.info(OmegaConf.to_yaml(cfg))
+    logger.info("Training configuration:\n%s", OmegaConf.to_yaml(cfg))
 
-    # Set random seed
-    if cfg.seed is not None:
-        np.random.seed(cfg.seed)
+    algorithm_cfg = cfg.algorithm
+    experiment_cfg = cfg.experiment
+
+    if experiment_cfg.seed is not None:
+        np.random.seed(experiment_cfg.seed)
 
     # Calculate state and action dimensions for Sevens game
     # State: board (52) + hand (52) + action_mask (53) = 157
@@ -57,34 +55,34 @@ def main(cfg: DictConfig) -> None:
     agent = DQNAgent(
         state_dim=state_dim,
         action_dim=action_dim,
-        hidden_layers=cfg.hidden_layers,
-        learning_rate=cfg.learning_rate,
-        gamma=cfg.gamma,
-        replay_buffer_size=cfg.buffer_size,
-        batch_size=cfg.batch_size,
-        target_update_freq=cfg.target_update_freq,
-        epsilon_start=cfg.epsilon_start,
-        epsilon_end=cfg.epsilon_end,
-        epsilon_decay=cfg.epsilon_decay,
-        double_dqn=cfg.double_dqn,
-        dueling=cfg.dueling_dqn,
-        gradient_clip=cfg.gradient_clip_norm,
-        activation=cfg.activation,
-        dropout=cfg.dropout,
-        tau=cfg.tau,
-        epsilon_decay_strategy=cfg.epsilon_decay_strategy,
-        device=cfg.device,
-        seed=cfg.seed,
+        hidden_layers=algorithm_cfg.hidden_layers,
+        learning_rate=algorithm_cfg.learning_rate,
+        gamma=algorithm_cfg.gamma,
+        replay_buffer_size=algorithm_cfg.buffer_size,
+        batch_size=algorithm_cfg.batch_size,
+        target_update_freq=algorithm_cfg.target_update_freq,
+        epsilon_start=algorithm_cfg.epsilon_start,
+        epsilon_end=algorithm_cfg.epsilon_end,
+        epsilon_decay=algorithm_cfg.epsilon_decay,
+        double_dqn=algorithm_cfg.double_dqn,
+        dueling=algorithm_cfg.dueling_dqn,
+        gradient_clip=algorithm_cfg.gradient_clip_norm,
+        activation=algorithm_cfg.activation,
+        dropout=algorithm_cfg.dropout,
+        tau=algorithm_cfg.tau,
+        epsilon_decay_strategy=algorithm_cfg.epsilon_decay_strategy,
+        device=experiment_cfg.device or algorithm_cfg.device,
+        seed=experiment_cfg.seed if experiment_cfg.seed is not None else algorithm_cfg.seed,
     )
 
     logger.info(f"Agent created with epsilon={agent.policy.get_epsilon():.3f}")
-    logger.info("Agent parameters from Hydra config:")
-    logger.info(f"  - Learning rate: {cfg.learning_rate}")
-    logger.info(f"  - Gamma: {cfg.gamma}")
-    logger.info(f"  - Batch size: {cfg.batch_size}")
-    logger.info(f"  - Hidden layers: {cfg.hidden_layers}")
-    logger.info(f"  - Double DQN: {cfg.double_dqn}")
-    logger.info(f"  - Dueling DQN: {cfg.dueling_dqn}")
+    logger.info("Algorithm parameters:")
+    logger.info(f"  - Learning rate: {algorithm_cfg.learning_rate}")
+    logger.info(f"  - Gamma: {algorithm_cfg.gamma}")
+    logger.info(f"  - Batch size: {algorithm_cfg.batch_size}")
+    logger.info(f"  - Hidden layers: {algorithm_cfg.hidden_layers}")
+    logger.info(f"  - Double DQN: {algorithm_cfg.double_dqn}")
+    logger.info(f"  - Dueling DQN: {algorithm_cfg.dueling_dqn}")
 
     # This is a demonstration script showing how to:
     # 1. Load agent parameters from Hydra config
@@ -94,10 +92,10 @@ def main(cfg: DictConfig) -> None:
     # For a full training loop, see other examples in this directory
 
     logger.info("\nTo run training with different parameters, try:")
-    logger.info("  python examples/train_dqn_with_hydra.py learning_rate=0.001")
-    logger.info("  python examples/train_dqn_with_hydra.py batch_size=128 gamma=0.99")
+    logger.info("  python examples/train_dqn_with_hydra.py algorithm.learning_rate=0.001")
+    logger.info("  python examples/train_dqn_with_hydra.py algorithm.batch_size=128 algorithm.gamma=0.99")
     logger.info(
-        "  python examples/train_dqn_with_hydra.py -m learning_rate=0.0001,0.001"
+        "  python examples/train_dqn_with_hydra.py -m algorithm.learning_rate=0.0001,0.001"
     )
 
     logger.info("\nConfiguration successfully loaded and agent created!")
