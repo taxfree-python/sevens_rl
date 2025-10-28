@@ -10,23 +10,44 @@ import torch
 from src.rl.dqn_agent import DQNAgent
 
 
+def create_test_agent(**kwargs):
+    """Create a DQN agent with default test parameters.
+
+    Parameters
+    ----------
+    **kwargs
+        Override default parameters.
+
+    Returns
+    -------
+    DQNAgent
+        A DQN agent configured for testing.
+    """
+    defaults = {
+        "state_dim": 157,
+        "action_dim": 53,
+        "hidden_layers": [128, 64],
+        "learning_rate": 0.001,
+        "gamma": 0.95,
+        "replay_buffer_size": 1000,
+        "batch_size": 32,
+        "target_update_freq": 10,
+        "epsilon_start": 1.0,
+        "epsilon_end": 0.05,
+        "epsilon_decay": 0.99,
+        "double_dqn": True,
+        "dueling": False,
+        "gradient_clip": 1.0,
+        "device": "cpu",
+    }
+    defaults.update(kwargs)
+    return DQNAgent(**defaults)
+
+
 @pytest.fixture
 def dqn_agent():
     """Create a DQN agent for testing."""
-    return DQNAgent(
-        state_dim=157,
-        action_dim=53,
-        hidden_layers=[128, 64],
-        learning_rate=0.001,
-        gamma=0.95,
-        replay_buffer_size=1000,
-        batch_size=32,
-        target_update_freq=10,
-        epsilon_start=1.0,
-        epsilon_end=0.05,
-        epsilon_decay=0.99,
-        seed=42,
-    )
+    return create_test_agent(seed=42)
 
 
 def test_dqn_agent_initialization(dqn_agent):
@@ -197,11 +218,7 @@ def test_dqn_agent_save_load(dqn_agent):
         dqn_agent.save(str(save_path))
 
         # Create new agent and load
-        new_agent = DQNAgent(
-            state_dim=157,
-            action_dim=53,
-            hidden_layers=[128, 64],
-        )
+        new_agent = create_test_agent()
         new_agent.load(str(save_path))
 
         # Check that states match
@@ -214,8 +231,8 @@ def test_dqn_agent_save_load(dqn_agent):
 
 def test_dqn_agent_double_dqn():
     """Test Double DQN configuration."""
-    agent_double = DQNAgent(state_dim=157, action_dim=53, double_dqn=True)
-    agent_standard = DQNAgent(state_dim=157, action_dim=53, double_dqn=False)
+    agent_double = create_test_agent(double_dqn=True)
+    agent_standard = create_test_agent(double_dqn=False)
 
     assert agent_double.double_dqn is True
     assert agent_standard.double_dqn is False
@@ -223,7 +240,7 @@ def test_dqn_agent_double_dqn():
 
 def test_dqn_agent_dueling_dqn():
     """Test Dueling DQN architecture."""
-    agent = DQNAgent(state_dim=157, action_dim=53, dueling=True)
+    agent = create_test_agent(dueling=True)
 
     # Check that networks use dueling architecture
     assert agent.q_network.dueling is True
@@ -232,21 +249,11 @@ def test_dqn_agent_dueling_dqn():
 
 def test_dqn_agent_gradient_clip():
     """Test gradient clipping."""
-    agent_with_clip = DQNAgent(
-        state_dim=157,
-        action_dim=53,
-        gradient_clip=1.0,
-        batch_size=32,
-    )
-    agent_without_clip = DQNAgent(
-        state_dim=157,
-        action_dim=53,
-        gradient_clip=None,
-        batch_size=32,
-    )
+    agent_with_clip = create_test_agent(gradient_clip=1.0)
+    agent_without_clip = create_test_agent(gradient_clip=0.0)  # 0 means no clipping
 
     assert agent_with_clip.gradient_clip == 1.0
-    assert agent_without_clip.gradient_clip is None
+    assert agent_without_clip.gradient_clip == 0.0
 
 
 def test_dqn_agent_observation_to_state(dqn_agent):
@@ -266,12 +273,12 @@ def test_dqn_agent_observation_to_state(dqn_agent):
 
 def test_dqn_agent_device():
     """Test device configuration."""
-    agent_cpu = DQNAgent(state_dim=157, action_dim=53, device="cpu")
+    agent_cpu = create_test_agent(device="cpu")
     assert agent_cpu.device.type == "cpu"
 
     # Only test cuda if available
     if torch.cuda.is_available():
-        agent_cuda = DQNAgent(state_dim=157, action_dim=53, device="cuda")
+        agent_cuda = create_test_agent(device="cuda")
         assert agent_cuda.device.type == "cuda"
 
 
@@ -279,8 +286,8 @@ def test_dqn_agent_seed_reproducibility():
     """Test that agents with same seed behave consistently."""
     seed = 42
 
-    agent1 = DQNAgent(state_dim=157, action_dim=53, seed=seed)
-    agent2 = DQNAgent(state_dim=157, action_dim=53, seed=seed)
+    agent1 = create_test_agent(seed=seed)
+    agent2 = create_test_agent(seed=seed)
 
     observation = {
         "board": np.zeros(52, dtype=np.int8),

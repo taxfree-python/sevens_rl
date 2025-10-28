@@ -32,36 +32,36 @@ class DQNAgent(AgentPolicy):
         Dimension of flattened state observation.
     action_dim : int
         Number of possible actions.
+    hidden_layers : list of int
+        Hidden layer sizes for Q-network.
+    learning_rate : float
+        Learning rate for optimizer.
+    gamma : float
+        Discount factor for future rewards.
+    replay_buffer_size : int
+        Maximum size of replay buffer.
+    batch_size : int
+        Batch size for training.
+    target_update_freq : int
+        Frequency (in episodes) to update target network.
+    epsilon_start : float
+        Initial exploration rate.
+    epsilon_end : float
+        Minimum exploration rate.
+    epsilon_decay : float
+        Epsilon decay factor.
+    double_dqn : bool
+        Whether to use Double DQN algorithm.
+    dueling : bool
+        Whether to use Dueling DQN architecture.
+    gradient_clip : float
+        Gradient clipping value.
+    device : str
+        Device for training ('cpu' or 'cuda').
     name : str or None, optional
         Human-readable identifier for the agent. Defaults to class name.
-    hidden_layers : list of int, optional
-        Hidden layer sizes for Q-network. Default is [512, 256, 128].
-    learning_rate : float, optional
-        Learning rate for optimizer. Default is 0.0001.
-    gamma : float, optional
-        Discount factor for future rewards. Default is 0.95.
-    replay_buffer_size : int, optional
-        Maximum size of replay buffer. Default is 100000.
-    batch_size : int, optional
-        Batch size for training. Default is 128.
-    target_update_freq : int, optional
-        Frequency (in episodes) to update target network. Default is 20.
-    epsilon_start : float, optional
-        Initial exploration rate. Default is 1.0.
-    epsilon_end : float, optional
-        Minimum exploration rate. Default is 0.05.
-    epsilon_decay : float, optional
-        Epsilon decay factor. Default is 0.999.
-    double_dqn : bool, optional
-        Whether to use Double DQN algorithm. Default is True.
-    dueling : bool, optional
-        Whether to use Dueling DQN architecture. Default is False.
-    gradient_clip : float or None, optional
-        Gradient clipping value. If None, no clipping. Default is 1.0.
-    device : str, optional
-        Device for training ('cpu' or 'cuda'). Default is 'cpu'.
     seed : int or None, optional
-        Random seed for reproducibility. Default is None.
+        Random seed for reproducibility. Defaults to None.
 
     Attributes
     ----------
@@ -85,25 +85,23 @@ class DQNAgent(AgentPolicy):
         self,
         state_dim: int,
         action_dim: int,
+        hidden_layers: list[int],
+        learning_rate: float,
+        gamma: float,
+        replay_buffer_size: int,
+        batch_size: int,
+        target_update_freq: int,
+        epsilon_start: float,
+        epsilon_end: float,
+        epsilon_decay: float,
+        double_dqn: bool,
+        dueling: bool,
+        gradient_clip: float,
+        device: str,
         name: str | None = None,
-        hidden_layers: list[int] = None,
-        learning_rate: float = 0.0001,
-        gamma: float = 0.95,
-        replay_buffer_size: int = 100000,
-        batch_size: int = 128,
-        target_update_freq: int = 20,
-        epsilon_start: float = 1.0,
-        epsilon_end: float = 0.05,
-        epsilon_decay: float = 0.999,
-        double_dqn: bool = True,
-        dueling: bool = False,
-        gradient_clip: float = 1.0,
-        device: str = "cpu",
-        seed: int = None,
+        seed: int | None = None,
     ):
         super().__init__(name=name)
-        if hidden_layers is None:
-            hidden_layers = [512, 256, 128]
 
         self.state_dim = state_dim
         self.action_dim = action_dim
