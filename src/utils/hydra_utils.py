@@ -80,37 +80,57 @@ def create_dqn_agent_from_config(
         action_dim=action_dim,
         hidden_layers=_cfg_get(algorithm_cfg, "hidden_layers", [512, 256, 128]),
         learning_rate=_cfg_get(
-            algorithm_cfg, "learning_rate", _cfg_get(training_cfg, "learning_rate", 0.0001)
+            algorithm_cfg,
+            "learning_rate",
+            _cfg_get(training_cfg, "learning_rate", 0.0001),
         ),
         gamma=_cfg_get(algorithm_cfg, "gamma", _cfg_get(training_cfg, "gamma", 0.95)),
         replay_buffer_size=_cfg_get(
             algorithm_cfg,
             "replay_buffer_size",
-            _cfg_get(algorithm_cfg, "buffer_size", _cfg_get(training_cfg, "replay_buffer_size", 100000)),
+            _cfg_get(
+                algorithm_cfg,
+                "buffer_size",
+                _cfg_get(training_cfg, "replay_buffer_size", 100000),
+            ),
         ),
-        batch_size=_cfg_get(algorithm_cfg, "batch_size", _cfg_get(training_cfg, "batch_size", 128)),
+        batch_size=_cfg_get(
+            algorithm_cfg, "batch_size", _cfg_get(training_cfg, "batch_size", 128)
+        ),
         target_update_freq=_cfg_get(
-            algorithm_cfg, "target_update_freq", _cfg_get(training_cfg, "target_update_freq", 20)
+            algorithm_cfg,
+            "target_update_freq",
+            _cfg_get(training_cfg, "target_update_freq", 20),
         ),
         epsilon_start=_cfg_get(
             algorithm_cfg, "epsilon_start", _cfg_get(training_cfg, "epsilon_start", 1.0)
         ),
-        epsilon_end=_cfg_get(algorithm_cfg, "epsilon_end", _cfg_get(training_cfg, "epsilon_end", 0.05)),
+        epsilon_end=_cfg_get(
+            algorithm_cfg, "epsilon_end", _cfg_get(training_cfg, "epsilon_end", 0.05)
+        ),
         epsilon_decay=_cfg_get(
-            algorithm_cfg, "epsilon_decay", _cfg_get(training_cfg, "epsilon_decay", 0.999)
+            algorithm_cfg,
+            "epsilon_decay",
+            _cfg_get(training_cfg, "epsilon_decay", 0.999),
         ),
         double_dqn=_cfg_get(algorithm_cfg, "double_dqn", True),
         dueling=_cfg_get(algorithm_cfg, "dueling_dqn", False),
         gradient_clip=_cfg_get(
-            algorithm_cfg, "gradient_clip_norm", _cfg_get(training_cfg, "gradient_clip", 1.0)
+            algorithm_cfg,
+            "gradient_clip_norm",
+            _cfg_get(training_cfg, "gradient_clip", 1.0),
         ),
-        device=_cfg_get(algorithm_cfg, "device", _cfg_get(experiment_cfg, "device", "cpu")),
+        device=_cfg_get(
+            algorithm_cfg, "device", _cfg_get(experiment_cfg, "device", "cpu")
+        ),
         seed=_cfg_get(algorithm_cfg, "seed", _cfg_get(experiment_cfg, "seed", None)),
         activation=_cfg_get(algorithm_cfg, "activation", "relu"),
         dropout=_cfg_get(algorithm_cfg, "dropout", 0.2),
         tau=_cfg_get(algorithm_cfg, "tau", _cfg_get(training_cfg, "tau", None)),
         epsilon_decay_strategy=_cfg_get(
-            algorithm_cfg, "epsilon_decay_strategy", _cfg_get(training_cfg, "epsilon_decay_strategy", "exponential")
+            algorithm_cfg,
+            "epsilon_decay_strategy",
+            _cfg_get(training_cfg, "epsilon_decay_strategy", "exponential"),
         ),
     )
 
@@ -136,8 +156,12 @@ def get_training_params(cfg: DictConfig) -> dict[str, Any]:
 
     return {
         "num_episodes": training_cfg.get("num_episodes", 10000),
-        "batch_size": training_cfg.get("batch_size", algorithm_cfg.get("batch_size", 128)),
-        "min_replay_size": training_cfg.get("min_replay_size", algorithm_cfg.get("min_buffer_size", 1000)),
+        "batch_size": training_cfg.get(
+            "batch_size", algorithm_cfg.get("batch_size", 128)
+        ),
+        "min_replay_size": training_cfg.get(
+            "min_replay_size", algorithm_cfg.get("min_buffer_size", 1000)
+        ),
     }
 
 

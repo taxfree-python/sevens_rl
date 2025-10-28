@@ -39,6 +39,7 @@ SPARSE_REWARDS = {
 # 環境設定 (Environment Configuration)
 # =============================================================================
 
+
 class SevensConfig:
     """
     Configuration class for Sevens environment.
@@ -79,9 +80,9 @@ class SevensConfig:
             Configuration dictionary.
         """
         return {
-            'num_players': self.num_players,
-            'reward_config': self.reward_config,
-            'render_mode': self.render_mode,
+            "num_players": self.num_players,
+            "reward_config": self.reward_config,
+            "render_mode": self.render_mode,
         }
 
 
@@ -106,7 +107,7 @@ TRAINING_CONFIG = SevensConfig(
 EVAL_CONFIG = SevensConfig(
     num_players=4,
     reward_config=None,
-    render_mode='human',
+    render_mode="human",
 )
 
 # 実験用: Winner-takes-all

@@ -367,11 +367,15 @@ def test_dqn_agent_soft_update_tau():
     # Soft update should move parameters but not copy exactly
     assert any(
         not torch.equal(initial, updated)
-        for initial, updated in zip(initial_target_params, updated_target_params, strict=True)
+        for initial, updated in zip(
+            initial_target_params, updated_target_params, strict=True
+        )
     )
     assert any(
         not torch.equal(updated, current)
-        for updated, current in zip(updated_target_params, agent.q_network.parameters(), strict=True)
+        for updated, current in zip(
+            updated_target_params, agent.q_network.parameters(), strict=True
+        )
     )
 
 

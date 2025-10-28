@@ -72,7 +72,9 @@ def main(cfg: DictConfig) -> None:
         tau=algorithm_cfg.tau,
         epsilon_decay_strategy=algorithm_cfg.epsilon_decay_strategy,
         device=experiment_cfg.device or algorithm_cfg.device,
-        seed=experiment_cfg.seed if experiment_cfg.seed is not None else algorithm_cfg.seed,
+        seed=experiment_cfg.seed
+        if experiment_cfg.seed is not None
+        else algorithm_cfg.seed,
     )
 
     logger.info(f"Agent created with epsilon={agent.policy.get_epsilon():.3f}")
@@ -92,8 +94,12 @@ def main(cfg: DictConfig) -> None:
     # For a full training loop, see other examples in this directory
 
     logger.info("\nTo run training with different parameters, try:")
-    logger.info("  python examples/train_dqn_with_hydra.py algorithm.learning_rate=0.001")
-    logger.info("  python examples/train_dqn_with_hydra.py algorithm.batch_size=128 algorithm.gamma=0.99")
+    logger.info(
+        "  python examples/train_dqn_with_hydra.py algorithm.learning_rate=0.001"
+    )
+    logger.info(
+        "  python examples/train_dqn_with_hydra.py algorithm.batch_size=128 algorithm.gamma=0.99"
+    )
     logger.info(
         "  python examples/train_dqn_with_hydra.py -m algorithm.learning_rate=0.0001,0.001"
     )
