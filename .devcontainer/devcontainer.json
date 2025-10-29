@@ -1,0 +1,42 @@
+{
+  "name": "sevens-rl",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile",
+    "args": {
+      "VARIANT": "3.11-bullseye",
+      "PYTORCH_INDEX_URL": "https://download.pytorch.org/whl/cpu"
+    }
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/sevens_rl",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "python.linting.enabled": true,
+        "python.linting.mypyEnabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.analysis.typeCheckingMode": "basic"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+  "runArgs": [
+    "--init"
+  ],
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/sevens_rl/src"
+  }
+}
