@@ -11,7 +11,7 @@ import torch
 
 from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
-from src.train_dqn import evaluate_episode, flatten_observation, train_episode
+from src.train_dqn import evaluate_episode, train_episode
 
 
 def create_test_agent(**kwargs):
@@ -64,29 +64,6 @@ def agents(env):
         agent.name = agent_id
         agents_dict[agent_id] = agent
     return agents_dict
-
-
-def test_flatten_observation():
-    """Test observation flattening."""
-    observation = {
-        "board": np.ones(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-        "hand_counts": np.array([10, 12, 15, 15], dtype=np.int8),
-        "card_play_order": np.arange(52, dtype=np.int8),
-        "current_player": np.array([1, 0, 0, 0], dtype=np.int8),
-    }
-
-    flattened = flatten_observation(observation)
-
-    assert isinstance(flattened, np.ndarray)
-    assert flattened.shape == (217,)
-    assert np.sum(flattened[:52]) == 52  # Board has all ones
-    assert np.sum(flattened[52:104]) == 0  # Hand has all zeros
-    assert np.sum(flattened[104:157]) == 53  # Action mask has all ones
-    assert np.sum(flattened[157:161]) == 52  # Hand counts sum to 52
-    assert np.sum(flattened[161:213]) == sum(range(52))  # Card play order
-    assert np.sum(flattened[213:217]) == 1  # Current player one-hot
 
 
 def test_train_episode_completes(env, agents):

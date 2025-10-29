@@ -23,35 +23,6 @@ from src.utils.hydra_utils import (
 from src.utils.logger import setup_logger
 
 
-def flatten_observation(observation: dict[str, np.ndarray]) -> np.ndarray:
-    """Flatten observation dict into a single vector.
-
-    Args:
-        observation: Dict with 'board', 'hand', 'action_mask',
-                    'hand_counts', 'card_play_order', 'current_player' keys
-
-    Returns:
-        Flattened numpy array of shape (217,)
-        = 52 (board) + 52 (hand) + 53 (action_mask)
-        + 4 (hand_counts) + 52 (card_play_order) + 4 (current_player)
-    """
-    board = observation["board"]
-    hand = observation["hand"]
-    action_mask = observation["action_mask"]
-    hand_counts = observation["hand_counts"]
-    card_play_order = observation["card_play_order"]
-    current_player = observation["current_player"]
-
-    return np.concatenate([
-        board,
-        hand,
-        action_mask,
-        hand_counts,
-        card_play_order,
-        current_player,
-    ])
-
-
 def setup_agents(
     cfg: DictConfig,
     env: SevensEnv,
@@ -253,7 +224,7 @@ def train_episode(
             continue
 
         # Store previous transition if exists
-        if agent_id in prev_observations:
+        if agent_id in training_agents and agent_id in prev_observations:
             agent = agents[agent_id]
             if hasattr(agent, "store_experience"):
                 agent.store_experience(
@@ -361,11 +332,14 @@ def evaluate_episode(
     episode_steps = 0
 
     # Temporarily set epsilon to 0 for DQN agents evaluation (pure exploitation)
+    # Use id() to avoid setting epsilon multiple times for shared networks
     original_epsilons = {}
+    processed_agents = set()
     for agent_id, agent in agents.items():
-        if hasattr(agent, "policy"):
-            original_epsilons[agent_id] = agent.policy.get_epsilon()
+        if hasattr(agent, "policy") and id(agent) not in processed_agents:
+            original_epsilons[id(agent)] = agent.policy.get_epsilon()
             agent.policy.set_epsilon(0.0)
+            processed_agents.add(id(agent))
 
     for agent_id in env.agent_iter():
         observation, reward, termination, truncation, info = env.last()
@@ -382,10 +356,10 @@ def evaluate_episode(
         episode_steps += 1
 
     # Restore epsilon values for DQN agents
-    for agent_id in original_epsilons:
-        agent = agents[agent_id]
-        if hasattr(agent, "policy"):
-            agent.policy.set_epsilon(original_epsilons[agent_id])
+    for agent_id, agent in agents.items():
+        agent_id_key = id(agent)
+        if agent_id_key in original_epsilons and hasattr(agent, "policy"):
+            agent.policy.set_epsilon(original_epsilons[agent_id_key])
 
     # Calculate statistics for training agents
     training_agents_rewards = {

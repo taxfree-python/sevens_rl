@@ -128,7 +128,7 @@ class SevensEnv(AECEnv):
         # hand(52): 自分の手札に各カードがあるか (0 or 1)
         # action_mask(53): 各アクション(52カード+1パス)が有効か (0 or 1)
         # hand_counts(num_players): 各プレイヤーの手札枚数
-        # card_play_order(52): 各カードが出された順番 (0=未出, 1-52=順番)
+        # card_play_order(52): 各カードが出された順番 (0-1に正規化, 0=未出)
         # current_player(num_players): 現在のプレイヤー (ワンホット)
         self.observation_spaces = {
             agent: spaces.Dict(
@@ -140,7 +140,7 @@ class SevensEnv(AECEnv):
                         low=0, high=NUM_CARDS, shape=(num_players,), dtype=np.int8
                     ),
                     "card_play_order": spaces.Box(
-                        low=0, high=NUM_CARDS, shape=(NUM_CARDS,), dtype=np.int8
+                        low=0.0, high=1.0, shape=(NUM_CARDS,), dtype=np.float32
                     ),
                     "current_player": spaces.MultiBinary(num_players),
                 }
@@ -280,12 +280,15 @@ class SevensEnv(AECEnv):
         current_player_idx = self.possible_agents.index(self.agent_selection)
         current_player[current_player_idx] = 1
 
+        # Normalize card_play_order to [0, 1] range for neural network input
+        card_play_order_normalized = self.card_play_order.astype(np.float32) / NUM_CARDS
+
         observation = {
             "board": self.board.copy(),
             "hand": self.hands[agent].copy(),
             "action_mask": self._get_action_mask(agent),
             "hand_counts": hand_counts,
-            "card_play_order": self.card_play_order.copy(),
+            "card_play_order": card_play_order_normalized,
             "current_player": current_player,
         }
         return observation
