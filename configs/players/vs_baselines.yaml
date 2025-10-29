@@ -1,0 +1,23 @@
+# Training: 1 DQN agent vs 3 baseline agents (mix of strategies)
+# Tests DQN against diverse opponents
+
+defaults:
+  - default
+
+num_players: 4
+mode: custom
+shared_network: false
+training_players: [0]
+
+players:
+  player_0:
+    type: dqn
+    train: true
+  player_1:
+    type: random
+  player_2:
+    type: nearest_sevens
+    prefer_high_rank: false
+  player_3:
+    type: nearest_sevens
+    prefer_high_rank: true

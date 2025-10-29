@@ -28,7 +28,7 @@ def create_test_agent(**kwargs):
         A DQN agent configured for testing.
     """
     defaults = {
-        "state_dim": 157,
+        "state_dim": 217,  # Updated for new observation space
         "action_dim": 53,
         "hidden_layers": [64, 32],  # Smaller for faster tests
         "learning_rate": 0.001,
@@ -72,15 +72,21 @@ def test_flatten_observation():
         "board": np.ones(52, dtype=np.int8),
         "hand": np.zeros(52, dtype=np.int8),
         "action_mask": np.ones(53, dtype=np.int8),
+        "hand_counts": np.array([10, 12, 15, 15], dtype=np.int8),
+        "card_play_order": np.arange(52, dtype=np.int8),
+        "current_player": np.array([1, 0, 0, 0], dtype=np.int8),
     }
 
     flattened = flatten_observation(observation)
 
     assert isinstance(flattened, np.ndarray)
-    assert flattened.shape == (157,)
+    assert flattened.shape == (217,)
     assert np.sum(flattened[:52]) == 52  # Board has all ones
     assert np.sum(flattened[52:104]) == 0  # Hand has all zeros
-    assert np.sum(flattened[104:]) == 53  # Action mask has all ones
+    assert np.sum(flattened[104:157]) == 53  # Action mask has all ones
+    assert np.sum(flattened[157:161]) == 52  # Hand counts sum to 52
+    assert np.sum(flattened[161:213]) == sum(range(52))  # Card play order
+    assert np.sum(flattened[213:217]) == 1  # Current player one-hot
 
 
 def test_train_episode_completes(env, agents):
@@ -266,10 +272,20 @@ def test_training_with_different_num_players():
     for num_players in [2, 3, 4]:
         env = SevensEnv(num_players=num_players)
 
-        # Create agents
+        # Calculate state_dim for this number of players
+        state_dim = (
+            52  # board
+            + 52  # hand
+            + 53  # action_mask
+            + num_players  # hand_counts
+            + 52  # card_play_order
+            + num_players  # current_player
+        )
+
+        # Create agents with correct state_dim
         agents = {}
         for agent_id in env.possible_agents:
-            agent = create_test_agent()
+            agent = create_test_agent(state_dim=state_dim)
             agent.name = agent_id
             agents[agent_id] = agent
 

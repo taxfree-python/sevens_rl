@@ -24,7 +24,7 @@ def create_test_agent(**kwargs):
         A DQN agent configured for testing.
     """
     defaults = {
-        "state_dim": 157,
+        "state_dim": 217,  # Updated for new observation space (4 players)
         "action_dim": 53,
         "hidden_layers": [128, 64],
         "learning_rate": 0.001,
@@ -44,6 +44,34 @@ def create_test_agent(**kwargs):
     return DQNAgent(**defaults)
 
 
+def create_test_observation(num_players=4, **kwargs):
+    """Create a complete observation dict for testing.
+
+    Parameters
+    ----------
+    num_players : int
+        Number of players (affects hand_counts and current_player dimensions).
+    **kwargs
+        Override specific observation fields.
+
+    Returns
+    -------
+    dict
+        Complete observation dictionary.
+    """
+    observation = {
+        "board": np.zeros(52, dtype=np.int8),
+        "hand": np.zeros(52, dtype=np.int8),
+        "action_mask": np.ones(53, dtype=np.int8),
+        "hand_counts": np.array([13, 13, 13, 13][:num_players], dtype=np.int8),
+        "card_play_order": np.zeros(52, dtype=np.int8),
+        "current_player": np.zeros(num_players, dtype=np.int8),
+    }
+    observation["current_player"][0] = 1  # Default to first player
+    observation.update(kwargs)
+    return observation
+
+
 @pytest.fixture
 def dqn_agent():
     """Create a DQN agent for testing."""
@@ -52,7 +80,7 @@ def dqn_agent():
 
 def test_dqn_agent_initialization(dqn_agent):
     """Test DQN agent initialization."""
-    assert dqn_agent.state_dim == 157
+    assert dqn_agent.state_dim == 217
     assert dqn_agent.action_dim == 53
     assert dqn_agent.gamma == 0.95
     assert dqn_agent.batch_size == 32
@@ -71,11 +99,7 @@ def test_dqn_agent_networks(dqn_agent):
 
 def test_dqn_agent_select_action(dqn_agent):
     """Test action selection."""
-    observation = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    observation = create_test_observation()
 
     action = dqn_agent.select_action(observation, agent_id="player_0")
 
@@ -88,14 +112,12 @@ def test_dqn_agent_select_action_respects_mask(dqn_agent):
     # Set epsilon to 0 for deterministic behavior (might still explore, so we test many times)
     dqn_agent.policy.set_epsilon(0.0)
 
-    observation = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.zeros(53, dtype=np.int8),
-    }
+    action_mask = np.zeros(53, dtype=np.int8)
     # Only allow actions 0 and 1
-    observation["action_mask"][0] = 1
-    observation["action_mask"][1] = 1
+    action_mask[0] = 1
+    action_mask[1] = 1
+
+    observation = create_test_observation(action_mask=action_mask)
 
     actions = [
         dqn_agent.select_action(observation, agent_id="player_0") for _ in range(100)
@@ -107,12 +129,8 @@ def test_dqn_agent_select_action_respects_mask(dqn_agent):
 
 def test_dqn_agent_store_experience(dqn_agent):
     """Test storing experience in replay buffer."""
-    state = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
-    next_state = state.copy()
+    state = create_test_observation()
+    next_state = create_test_observation()
 
     initial_buffer_size = len(dqn_agent.replay_buffer)
 
@@ -134,11 +152,7 @@ def test_dqn_agent_train_step_not_ready(dqn_agent):
 def test_dqn_agent_train_step_ready(dqn_agent):
     """Test training step when buffer is ready."""
     # Fill buffer with minimum required experiences
-    state = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    state = create_test_observation()
 
     for i in range(dqn_agent.batch_size + 10):
         dqn_agent.store_experience(
@@ -200,11 +214,7 @@ def test_dqn_agent_end_episode(dqn_agent):
 def test_dqn_agent_save_load(dqn_agent):
     """Test saving and loading agent."""
     # Train a bit to change weights
-    state = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    state = create_test_observation()
 
     for i in range(50):
         dqn_agent.store_experience(state, i % 53, float(i), state, False)
@@ -256,11 +266,7 @@ def test_dqn_agent_gradient_clip():
     assert agent_without_clip.gradient_clip == 0.0
 
     # Ensure training still updates parameters when clipping disabled
-    state = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    state = create_test_observation()
 
     for i in range(agent_without_clip.batch_size + 5):
         agent_without_clip.store_experience(
@@ -283,16 +289,14 @@ def test_dqn_agent_gradient_clip():
 
 def test_dqn_agent_observation_to_state(dqn_agent):
     """Test observation to state conversion."""
-    observation = {
-        "board": np.ones(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    observation = create_test_observation(
+        board=np.ones(52, dtype=np.int8)
+    )
 
     state = dqn_agent._observation_to_state(observation)
 
     assert isinstance(state, np.ndarray)
-    assert state.shape == (157,)  # 52 + 52 + 53
+    assert state.shape == (217,)  # 52 + 52 + 53 + 4 + 52 + 4
     assert state.dtype == np.float32
 
 
@@ -314,11 +318,7 @@ def test_dqn_agent_seed_reproducibility():
     agent1 = create_test_agent(seed=seed)
     agent2 = create_test_agent(seed=seed)
 
-    observation = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    observation = create_test_observation()
 
     # Generate multiple actions
     actions1 = [agent1.select_action(observation, "player_0") for _ in range(50)]
@@ -333,11 +333,7 @@ def test_dqn_agent_epsilon_decay_during_training(dqn_agent):
     initial_epsilon = dqn_agent.policy.get_epsilon()
 
     # Fill buffer and train
-    state = {
-        "board": np.zeros(52, dtype=np.int8),
-        "hand": np.zeros(52, dtype=np.int8),
-        "action_mask": np.ones(53, dtype=np.int8),
-    }
+    state = create_test_observation()
 
     for i in range(100):
         dqn_agent.store_experience(state, i % 53, float(i), state, False)

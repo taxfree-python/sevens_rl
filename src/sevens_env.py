@@ -123,16 +123,26 @@ class SevensEnv(AECEnv):
         # エージェント定義
         self.possible_agents = [f"player_{i}" for i in range(num_players)]
 
-        # 観測空間: [場の状態(52), 自分の手札(52), 有効なアクション(53)]
-        # 場の状態: 各カードが場に出ているか (0 or 1)
-        # 手札: 各カードを持っているか (0 or 1)
-        # 有効なアクション: 各アクション(52カード+1パス)が有効か (0 or 1)
+        # 観測空間の定義
+        # board(52): 各カードが場に出ているか (0 or 1)
+        # hand(52): 自分の手札に各カードがあるか (0 or 1)
+        # action_mask(53): 各アクション(52カード+1パス)が有効か (0 or 1)
+        # hand_counts(num_players): 各プレイヤーの手札枚数
+        # card_play_order(52): 各カードが出された順番 (0=未出, 1-52=順番)
+        # current_player(num_players): 現在のプレイヤー (ワンホット)
         self.observation_spaces = {
             agent: spaces.Dict(
                 {
                     "board": spaces.MultiBinary(NUM_CARDS),
                     "hand": spaces.MultiBinary(NUM_CARDS),
                     "action_mask": spaces.MultiBinary(NUM_CARDS + 1),
+                    "hand_counts": spaces.Box(
+                        low=0, high=NUM_CARDS, shape=(num_players,), dtype=np.int8
+                    ),
+                    "card_play_order": spaces.Box(
+                        low=0, high=NUM_CARDS, shape=(NUM_CARDS,), dtype=np.int8
+                    ),
+                    "current_player": spaces.MultiBinary(num_players),
                 }
             )
             for agent in self.possible_agents
@@ -178,6 +188,10 @@ class SevensEnv(AECEnv):
             agent: np.zeros(NUM_CARDS, dtype=np.int8) for agent in self.agents
         }
         self.finished_order = []  # 上がった順番
+
+        # プレイ履歴の追跡
+        self.card_play_order = np.zeros(NUM_CARDS, dtype=np.int8)  # 各カードが出された順番
+        self.play_count = 0  # これまでに出されたカードの総数
 
         # カード配布
         self._deal_cards()
@@ -228,6 +242,10 @@ class SevensEnv(AECEnv):
                     self.hands[agent][seven_id] = 0
                     self.board[seven_id] = 1
 
+                    # プレイ順序を記録（7は最初に出される）
+                    self.play_count += 1
+                    self.card_play_order[seven_id] = self.play_count
+
                     # ダイヤの7を持っていたプレイヤーを記録
                     if seven_id == diamond_seven_id:
                         starting_player = agent
@@ -249,12 +267,26 @@ class SevensEnv(AECEnv):
         Returns
         -------
         dict
-            Observation containing board state, hand, and action mask.
+            Observation containing board state, hand, action mask,
+            hand counts, card play order, and current player.
         """
+        # 各プレイヤーの手札枚数を計算
+        hand_counts = np.array(
+            [np.sum(self.hands[a]) for a in self.possible_agents], dtype=np.int8
+        )
+
+        # 現在のプレイヤーをワンホットエンコーディング
+        current_player = np.zeros(len(self.possible_agents), dtype=np.int8)
+        current_player_idx = self.possible_agents.index(self.agent_selection)
+        current_player[current_player_idx] = 1
+
         observation = {
             "board": self.board.copy(),
             "hand": self.hands[agent].copy(),
             "action_mask": self._get_action_mask(agent),
+            "hand_counts": hand_counts,
+            "card_play_order": self.card_play_order.copy(),
+            "current_player": current_player,
         }
         return observation
 
@@ -363,6 +395,10 @@ class SevensEnv(AECEnv):
         if action < NUM_CARDS:  # カードを出す
             self.hands[agent][action] = 0
             self.board[action] = 1
+
+            # プレイ順序を記録
+            self.play_count += 1
+            self.card_play_order[action] = self.play_count
 
             # 手札がなくなったら上がり
             if np.sum(self.hands[agent]) == 0:

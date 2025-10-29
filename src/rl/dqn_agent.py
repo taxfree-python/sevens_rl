@@ -375,7 +375,8 @@ class DQNAgent(AgentPolicy):
         Parameters
         ----------
         observation : dict
-            Observation dictionary with 'board', 'hand', 'action_mask'.
+            Observation dictionary with 'board', 'hand', 'action_mask',
+            'hand_counts', 'card_play_order', 'current_player'.
 
         Returns
         -------
@@ -385,7 +386,17 @@ class DQNAgent(AgentPolicy):
         board = observation["board"].astype(np.float32)
         hand = observation["hand"].astype(np.float32)
         action_mask = observation["action_mask"].astype(np.float32)
+        hand_counts = observation["hand_counts"].astype(np.float32)
+        card_play_order = observation["card_play_order"].astype(np.float32)
+        current_player = observation["current_player"].astype(np.float32)
 
         # Concatenate all components
-        state = np.concatenate([board, hand, action_mask])
+        state = np.concatenate([
+            board,
+            hand,
+            action_mask,
+            hand_counts,
+            card_play_order,
+            current_player,
+        ])
         return state
