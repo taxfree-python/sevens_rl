@@ -5,9 +5,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import numpy as np
 import pytest
-import torch
 
 from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
@@ -92,7 +90,9 @@ def test_train_episode_completes(env, agents):
 
     # Check reward is a number
     assert isinstance(stats["training_agent_reward"], (int, float))
-    assert stats["training_agents_rewards"]["player_0"] == stats["training_agent_reward"]
+    assert (
+        stats["training_agents_rewards"]["player_0"] == stats["training_agent_reward"]
+    )
 
 
 def test_evaluate_episode_completes(env, agents):
@@ -111,7 +111,9 @@ def test_evaluate_episode_completes(env, agents):
     assert isinstance(stats["episode_rewards"], dict)
     assert len(stats["episode_rewards"]) == 4  # 4 players
     assert stats["training_agents"] == ["player_0"]
-    assert stats["training_agents_rewards"]["player_0"] == stats["training_agent_reward"]
+    assert (
+        stats["training_agents_rewards"]["player_0"] == stats["training_agent_reward"]
+    )
 
 
 def test_evaluate_episode_uses_zero_epsilon(env, agents):
@@ -310,9 +312,7 @@ def test_training_session_smoke_test(env, agents):
 
             # Evaluate
             if episode % eval_freq == 0:
-                eval_stats = evaluate_episode(
-                    env, agents, training_agents=["player_0"]
-                )
+                eval_stats = evaluate_episode(env, agents, training_agents=["player_0"])
                 eval_rewards.append(eval_stats["training_agents_rewards"]["player_0"])
 
                 # Save checkpoint

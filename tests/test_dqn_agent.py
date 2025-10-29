@@ -289,9 +289,7 @@ def test_dqn_agent_gradient_clip():
 
 def test_dqn_agent_observation_to_state(dqn_agent):
     """Test observation to state conversion."""
-    observation = create_test_observation(
-        board=np.ones(52, dtype=np.int8)
-    )
+    observation = create_test_observation(board=np.ones(52, dtype=np.int8))
 
     state = dqn_agent._observation_to_state(observation)
 

@@ -190,7 +190,9 @@ class SevensEnv(AECEnv):
         self.finished_order = []  # 上がった順番
 
         # プレイ履歴の追跡
-        self.card_play_order = np.zeros(NUM_CARDS, dtype=np.int8)  # 各カードが出された順番
+        self.card_play_order = np.zeros(
+            NUM_CARDS, dtype=np.int8
+        )  # 各カードが出された順番
         self.play_count = 0  # これまでに出されたカードの総数
 
         # カード配布

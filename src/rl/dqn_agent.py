@@ -391,12 +391,14 @@ class DQNAgent(AgentPolicy):
         current_player = observation["current_player"].astype(np.float32)
 
         # Concatenate all components
-        state = np.concatenate([
-            board,
-            hand,
-            action_mask,
-            hand_counts,
-            card_play_order,
-            current_player,
-        ])
+        state = np.concatenate(
+            [
+                board,
+                hand,
+                action_mask,
+                hand_counts,
+                card_play_order,
+                current_player,
+            ]
+        )
         return state

@@ -12,7 +12,6 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 from src.agents import NearestSevensAgent, RandomAgent
-from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
 from src.utils.hydra_utils import (
     create_dqn_agent_from_config,
@@ -193,7 +192,7 @@ def train_episode(
         training_agents = list(env.possible_agents)
 
     env.reset()
-    episode_rewards = {agent_id: 0.0 for agent_id in env.agents}
+    episode_rewards = dict.fromkeys(env.agents, 0.0)
     episode_steps = 0
     training_losses = []
     training_q_values = []
@@ -328,14 +327,14 @@ def evaluate_episode(
         training_agents = list(env.possible_agents)
 
     env.reset()
-    episode_rewards = {agent_id: 0.0 for agent_id in env.agents}
+    episode_rewards = dict.fromkeys(env.agents, 0.0)
     episode_steps = 0
 
     # Temporarily set epsilon to 0 for DQN agents evaluation (pure exploitation)
     # Use id() to avoid setting epsilon multiple times for shared networks
     original_epsilons = {}
     processed_agents = set()
-    for agent_id, agent in agents.items():
+    for _agent_id, agent in agents.items():
         if hasattr(agent, "policy") and id(agent) not in processed_agents:
             original_epsilons[id(agent)] = agent.policy.get_epsilon()
             agent.policy.set_epsilon(0.0)
@@ -356,7 +355,7 @@ def evaluate_episode(
         episode_steps += 1
 
     # Restore epsilon values for DQN agents
-    for agent_id, agent in agents.items():
+    for _agent_id, agent in agents.items():
         agent_id_key = id(agent)
         if agent_id_key in original_epsilons and hasattr(agent, "policy"):
             agent.policy.set_epsilon(original_epsilons[agent_id_key])
@@ -429,9 +428,7 @@ def main(cfg: DictConfig) -> None:
     logger.info(f"Action dimension: {action_dim}")
 
     # Setup agents based on players configuration
-    agents, training_agents = setup_agents(
-        cfg, env, state_dim, action_dim, logger
-    )
+    agents, training_agents = setup_agents(cfg, env, state_dim, action_dim, logger)
 
     # Get Q-Network parameters from first DQN agent
     first_dqn_agent = None
@@ -441,7 +438,9 @@ def main(cfg: DictConfig) -> None:
             break
 
     if first_dqn_agent:
-        logger.info(f"Q-Network parameters: {first_dqn_agent.q_network.get_num_parameters()}")
+        logger.info(
+            f"Q-Network parameters: {first_dqn_agent.q_network.get_num_parameters()}"
+        )
 
     # Setup output directories
     output_dir = Path.cwd()  # Hydra sets CWD to output directory
@@ -523,7 +522,9 @@ def main(cfg: DictConfig) -> None:
                     )
 
                     # Determine winner
-                    winner = max(eval_stats["episode_rewards"].items(), key=lambda x: x[1])[0]
+                    winner = max(
+                        eval_stats["episode_rewards"].items(), key=lambda x: x[1]
+                    )[0]
                     eval_wins[agent_id].append(winner == agent_id)
 
             # Aggregate evaluation results
