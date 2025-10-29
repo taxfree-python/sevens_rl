@@ -42,7 +42,6 @@ htmlcov/
 # Project-specific
 ToDo.md
 memo.md
-.devcontainer
 .serena/
 .claude/
 CLAUDE.md
