@@ -19,16 +19,12 @@ players:
   player_0:
     type: dqn
     network: network_a
-    train: true
   player_1:
     type: dqn
     network: network_a
-    train: true
   player_2:
     type: dqn
     network: network_b
-    train: true
   player_3:
     type: dqn
     network: network_b
-    train: true

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import hydra
 import numpy as np
@@ -12,6 +12,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 from src.agents import NearestSevensAgent, RandomAgent
+from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
 from src.utils.hydra_utils import (
     create_dqn_agent_from_config,
@@ -21,6 +22,188 @@ from src.utils.hydra_utils import (
 )
 from src.utils.logger import setup_logger
 
+# Type alias for agent types
+Agent = Union[DQNAgent, RandomAgent, NearestSevensAgent]
+
+
+def _normalize_training_agents(
+    training_agents: list[str] | str | None,
+    possible_agents: list[str],
+) -> list[str]:
+    """Normalize training_agents parameter to a list of agent IDs.
+
+    Args:
+        training_agents: Collection of agent IDs to train, or None for all agents.
+            Can be a list of agent IDs, a single agent ID string, or None.
+        possible_agents: List of all possible agent IDs in the environment
+
+    Returns:
+        List of agent IDs to train
+    """
+    if training_agents is None:
+        return list(possible_agents)
+    elif isinstance(training_agents, str):
+        return [training_agents]
+    else:
+        return list(training_agents)
+
+
+def _setup_self_play_agents(
+    cfg: DictConfig,
+    env: SevensEnv,
+    state_dim: int,
+    action_dim: int,
+    shared_network: bool,
+    logger: logging.Logger,
+) -> dict[str, Agent]:
+    """Setup agents for self-play mode.
+
+    Args:
+        cfg: Hydra configuration
+        env: Sevens environment
+        state_dim: State dimension
+        action_dim: Action dimension
+        shared_network: Whether to use shared network
+        logger: Logger instance
+
+    Returns:
+        Dictionary of agent_id -> Agent
+    """
+    agents = {}
+
+    if shared_network:
+        # Create one shared DQN agent
+        shared_dqn_agent = create_dqn_agent_from_config(
+            cfg, state_dim=state_dim, action_dim=action_dim
+        )
+        for agent_id in env.possible_agents:
+            agents[agent_id] = shared_dqn_agent
+            logger.info(f"Assigned shared DQN to {agent_id}")
+    else:
+        # Create independent DQN agents
+        for agent_id in env.possible_agents:
+            agent = create_dqn_agent_from_config(
+                cfg, state_dim=state_dim, action_dim=action_dim
+            )
+            agent.name = agent_id
+            agents[agent_id] = agent
+            logger.info(f"Created independent DQN agent: {agent_id}")
+
+    return agents
+
+
+def _setup_vs_random_agents(
+    cfg: DictConfig,
+    env: SevensEnv,
+    state_dim: int,
+    action_dim: int,
+    training_agents: list[str],
+    logger: logging.Logger,
+) -> dict[str, Agent]:
+    """Setup agents for vs_random mode.
+
+    Args:
+        cfg: Hydra configuration
+        env: Sevens environment
+        state_dim: State dimension
+        action_dim: Action dimension
+        training_agents: List of training agent IDs
+        logger: Logger instance
+
+    Returns:
+        Dictionary of agent_id -> Agent
+    """
+    agents = {}
+
+    for agent_id in env.possible_agents:
+        if agent_id in training_agents:
+            agent = create_dqn_agent_from_config(
+                cfg, state_dim=state_dim, action_dim=action_dim
+            )
+            agent.name = agent_id
+            agents[agent_id] = agent
+            logger.info(f"Created DQN agent: {agent_id}")
+        else:
+            agents[agent_id] = RandomAgent()
+            logger.info(f"Created Random agent: {agent_id}")
+
+    return agents
+
+
+def _setup_custom_agents(
+    cfg: DictConfig,
+    env: SevensEnv,
+    state_dim: int,
+    action_dim: int,
+    players_cfg: DictConfig,
+    logger: logging.Logger,
+) -> dict[str, Agent]:
+    """Setup agents for custom mode.
+
+    Args:
+        cfg: Hydra configuration
+        env: Sevens environment
+        state_dim: State dimension
+        action_dim: Action dimension
+        players_cfg: Players configuration
+        logger: Logger instance
+
+    Returns:
+        Dictionary of agent_id -> Agent
+    """
+    agents = {}
+    custom_players = players_cfg.get("players", {})
+    networks_cfg = players_cfg.get("networks", {})
+
+    # Create network instances if specified
+    network_instances = {}
+    if networks_cfg:
+        for net_id, net_config in networks_cfg.items():
+            if "shared_by" in net_config:
+                # Create shared network
+                network_instances[net_id] = create_dqn_agent_from_config(
+                    cfg, state_dim=state_dim, action_dim=action_dim
+                )
+                logger.info(f"Created shared network: {net_id}")
+
+    # Create agents based on custom config
+    for agent_id in env.possible_agents:
+        player_cfg = custom_players.get(agent_id, {})
+        agent_type = player_cfg.get("type", "dqn")
+
+        if agent_type == "dqn":
+            network_id = player_cfg.get("network")
+            if network_id and network_id in network_instances:
+                # Use shared network
+                agents[agent_id] = network_instances[network_id]
+                logger.info(f"Assigned shared network '{network_id}' to {agent_id}")
+            else:
+                # Create independent network
+                agent = create_dqn_agent_from_config(
+                    cfg, state_dim=state_dim, action_dim=action_dim
+                )
+                agent.name = agent_id
+                agents[agent_id] = agent
+                logger.info(f"Created independent DQN agent: {agent_id}")
+
+        elif agent_type == "random":
+            agents[agent_id] = RandomAgent()
+            logger.info(f"Created Random agent: {agent_id}")
+
+        elif agent_type == "nearest_sevens":
+            prefer_high = player_cfg.get("prefer_high_rank", False)
+            agents[agent_id] = NearestSevensAgent(prefer_high_rank=prefer_high)
+            logger.info(
+                f"Created NearestSevens agent: {agent_id} "
+                f"(prefer_high_rank={prefer_high})"
+            )
+
+        else:
+            msg = f"Unknown agent type: {agent_type}"
+            raise ValueError(msg)
+
+    return agents
+
 
 def setup_agents(
     cfg: DictConfig,
@@ -28,7 +211,7 @@ def setup_agents(
     state_dim: int,
     action_dim: int,
     logger: logging.Logger,
-) -> tuple[dict[str, Any], list[str]]:
+) -> tuple[dict[str, Agent], list[str]]:
     """Setup agents based on players configuration.
 
     Args:
@@ -52,99 +235,22 @@ def setup_agents(
     else:
         training_agents = [f"player_{i}" for i in training_players]
 
-    agents = {}
-    shared_dqn_agent = None
-
     logger.info(f"Setting up agents with mode: {mode}")
     logger.info(f"Shared network: {shared_network}")
     logger.info(f"Training agents: {training_agents}")
 
     if mode == "self_play":
-        # All players are DQN with shared or independent networks
-        if shared_network:
-            # Create one shared DQN agent
-            shared_dqn_agent = create_dqn_agent_from_config(
-                cfg, state_dim=state_dim, action_dim=action_dim
-            )
-            for agent_id in env.possible_agents:
-                agents[agent_id] = shared_dqn_agent
-                logger.info(f"Assigned shared DQN to {agent_id}")
-        else:
-            # Create independent DQN agents
-            for agent_id in env.possible_agents:
-                agent = create_dqn_agent_from_config(
-                    cfg, state_dim=state_dim, action_dim=action_dim
-                )
-                agent.name = agent_id
-                agents[agent_id] = agent
-                logger.info(f"Created independent DQN agent: {agent_id}")
-
+        agents = _setup_self_play_agents(
+            cfg, env, state_dim, action_dim, shared_network, logger
+        )
     elif mode == "vs_random":
-        # Training agent(s) are DQN, others are Random
-        for agent_id in env.possible_agents:
-            if agent_id in training_agents:
-                agent = create_dqn_agent_from_config(
-                    cfg, state_dim=state_dim, action_dim=action_dim
-                )
-                agent.name = agent_id
-                agents[agent_id] = agent
-                logger.info(f"Created DQN agent: {agent_id}")
-            else:
-                agents[agent_id] = RandomAgent()
-                logger.info(f"Created Random agent: {agent_id}")
-
+        agents = _setup_vs_random_agents(
+            cfg, env, state_dim, action_dim, training_agents, logger
+        )
     elif mode == "custom":
-        # Custom configuration per player
-        custom_players = players_cfg.get("players", {})
-        networks_cfg = players_cfg.get("networks", {})
-
-        # Create network instances if specified
-        network_instances = {}
-        if networks_cfg:
-            for net_id, net_config in networks_cfg.items():
-                if "shared_by" in net_config:
-                    # Create shared network
-                    network_instances[net_id] = create_dqn_agent_from_config(
-                        cfg, state_dim=state_dim, action_dim=action_dim
-                    )
-                    logger.info(f"Created shared network: {net_id}")
-
-        # Create agents based on custom config
-        for agent_id in env.possible_agents:
-            player_cfg = custom_players.get(agent_id, {})
-            agent_type = player_cfg.get("type", "dqn")
-
-            if agent_type == "dqn":
-                network_id = player_cfg.get("network")
-                if network_id and network_id in network_instances:
-                    # Use shared network
-                    agents[agent_id] = network_instances[network_id]
-                    logger.info(f"Assigned shared network '{network_id}' to {agent_id}")
-                else:
-                    # Create independent network
-                    agent = create_dqn_agent_from_config(
-                        cfg, state_dim=state_dim, action_dim=action_dim
-                    )
-                    agent.name = agent_id
-                    agents[agent_id] = agent
-                    logger.info(f"Created independent DQN agent: {agent_id}")
-
-            elif agent_type == "random":
-                agents[agent_id] = RandomAgent()
-                logger.info(f"Created Random agent: {agent_id}")
-
-            elif agent_type == "nearest_sevens":
-                prefer_high = player_cfg.get("prefer_high_rank", False)
-                agents[agent_id] = NearestSevensAgent(prefer_high_rank=prefer_high)
-                logger.info(
-                    f"Created NearestSevens agent: {agent_id} "
-                    f"(prefer_high_rank={prefer_high})"
-                )
-
-            else:
-                msg = f"Unknown agent type: {agent_type}"
-                raise ValueError(msg)
-
+        agents = _setup_custom_agents(
+            cfg, env, state_dim, action_dim, players_cfg, logger
+        )
     else:
         msg = f"Unknown mode: {mode}"
         raise ValueError(msg)
@@ -154,11 +260,9 @@ def setup_agents(
 
 def train_episode(
     env: SevensEnv,
-    agents: dict[str, Any],
+    agents: dict[str, Agent],
     logger: logging.Logger,
     training_agents: list[str] | str | None = None,
-    *,
-    training_agent: str | None = None,
 ) -> dict[str, Any]:
     """Train for one episode.
 
@@ -167,29 +271,12 @@ def train_episode(
         agents: Dictionary of agent_id -> Agent (DQN, Random, etc.)
         logger: Logger instance
         training_agents: Collection of agent IDs to train. If None, all agents
-            are trained. Accepts a single agent ID as string for backward
-            compatibility.
-        training_agent: Backward-compatible alias for single training agent.
+            are trained. Can be a list of agent IDs or a single agent ID string.
 
     Returns:
         Dictionary with episode statistics
     """
-    if training_agent is not None:
-        if training_agents is not None:
-            raise ValueError(
-                "Specify either training_agents or training_agent, not both."
-            )
-        training_agents = [training_agent]
-
-    if training_agents is None:
-        training_agents = list(env.possible_agents)
-    elif isinstance(training_agents, str):
-        training_agents = [training_agents]
-    else:
-        training_agents = list(training_agents)
-
-    if not training_agents:
-        training_agents = list(env.possible_agents)
+    training_agents = _normalize_training_agents(training_agents, env.possible_agents)
 
     env.reset()
     episode_rewards = dict.fromkeys(env.agents, 0.0)
@@ -272,6 +359,9 @@ def train_episode(
             epsilon = agent.policy.get_epsilon()
             break
 
+    # Determine winner from finished_order (first to finish wins)
+    winner = env.finished_order[0] if env.finished_order else None
+
     stats: dict[str, Any] = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
@@ -280,6 +370,8 @@ def train_episode(
         "mean_q_value": np.mean(training_q_values) if training_q_values else 0.0,
         "epsilon": epsilon,
         "training_agents": training_agents,
+        "winner": winner,
+        "finished_order": env.finished_order,
     }
 
     if len(training_agents) == 1:
@@ -292,10 +384,8 @@ def train_episode(
 
 def evaluate_episode(
     env: SevensEnv,
-    agents: dict[str, Any],
+    agents: dict[str, Agent],
     training_agents: list[str] | str | None = None,
-    *,
-    training_agent: str | None = None,
 ) -> dict[str, Any]:
     """Evaluate agents for one episode (no training).
 
@@ -303,28 +393,12 @@ def evaluate_episode(
         env: Sevens environment
         agents: Dictionary of agent_id -> Agent (DQN, Random, etc.)
         training_agents: Collection of agents being trained and tracked.
-            Accepts a single agent ID string for backward compatibility.
-        training_agent: Backward-compatible alias for single training agent.
+            Can be a list of agent IDs or a single agent ID string, or None for all.
 
     Returns:
         Dictionary with episode statistics
     """
-    if training_agent is not None:
-        if training_agents is not None:
-            raise ValueError(
-                "Specify either training_agents or training_agent, not both."
-            )
-        training_agents = [training_agent]
-
-    if training_agents is None:
-        training_agents = list(env.possible_agents)
-    elif isinstance(training_agents, str):
-        training_agents = [training_agents]
-    else:
-        training_agents = list(training_agents)
-
-    if not training_agents:
-        training_agents = list(env.possible_agents)
+    training_agents = _normalize_training_agents(training_agents, env.possible_agents)
 
     env.reset()
     episode_rewards = dict.fromkeys(env.agents, 0.0)
@@ -365,11 +439,16 @@ def evaluate_episode(
         agent_id: episode_rewards[agent_id] for agent_id in training_agents
     }
 
+    # Determine winner from finished_order (first to finish wins)
+    winner = env.finished_order[0] if env.finished_order else None
+
     stats: dict[str, Any] = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
         "training_agents_rewards": training_agents_rewards,
         "training_agents": training_agents,
+        "winner": winner,
+        "finished_order": env.finished_order,
     }
 
     if len(training_agents) == 1:
@@ -472,9 +551,9 @@ def main(cfg: DictConfig) -> None:
             training_reward = stats["training_agents_rewards"][agent_id]
             episode_rewards_history[agent_id].append(training_reward)
 
-            # Determine winner (agent with highest cumulative reward)
-            winner = max(stats["episode_rewards"].items(), key=lambda x: x[1])[0]
-            won = winner == agent_id
+            # Determine if this agent won (first in finished_order)
+            winner = stats["winner"]
+            won = winner == agent_id if winner else False
             episode_wins[agent_id].append(won)
 
         # Log progress
@@ -503,6 +582,18 @@ def main(cfg: DictConfig) -> None:
 
             logger.info(log_msg)
 
+            # Log individual agent performance if multiple training agents
+            if len(training_agents) > 1:
+                for agent_id in training_agents:
+                    agent_recent_rewards = episode_rewards_history[agent_id][-log_freq:]
+                    agent_recent_wins = episode_wins[agent_id][-log_freq:]
+                    agent_avg_reward = np.mean(agent_recent_rewards)
+                    agent_win_rate = np.mean(agent_recent_wins) * 100
+                    logger.info(
+                        f"  {agent_id}: Avg Reward: {agent_avg_reward:.3f} | "
+                        f"Win Rate: {agent_win_rate:.1f}%"
+                    )
+
         # Evaluation
         if episode % eval_freq == 0:
             logger.info("-" * 80)
@@ -521,11 +612,11 @@ def main(cfg: DictConfig) -> None:
                         eval_stats["training_agents_rewards"][agent_id]
                     )
 
-                    # Determine winner
-                    winner = max(
-                        eval_stats["episode_rewards"].items(), key=lambda x: x[1]
-                    )[0]
-                    eval_wins[agent_id].append(winner == agent_id)
+                    # Determine if this agent won (first in finished_order)
+                    winner = eval_stats["winner"]
+                    eval_wins[agent_id].append(
+                        winner == agent_id if winner else False
+                    )
 
             # Aggregate evaluation results
             all_eval_rewards = []
@@ -543,6 +634,19 @@ def main(cfg: DictConfig) -> None:
                 f"Win Rate: {eval_win_rate:.1f}% "
                 f"({sum(all_eval_wins)}/{len(all_eval_wins)} wins)"
             )
+
+            # Log individual agent evaluation results if multiple training agents
+            if len(training_agents) > 1:
+                for agent_id in training_agents:
+                    agent_eval_avg_reward = np.mean(eval_rewards[agent_id])
+                    agent_eval_win_rate = np.mean(eval_wins[agent_id]) * 100
+                    agent_eval_wins_count = sum(eval_wins[agent_id])
+                    logger.info(
+                        f"  {agent_id}: Avg Reward: {agent_eval_avg_reward:.3f} | "
+                        f"Win Rate: {agent_eval_win_rate:.1f}% "
+                        f"({agent_eval_wins_count}/{num_eval_episodes} wins)"
+                    )
+
             logger.info("-" * 80)
 
         # Save checkpoint (save all unique DQN agents)
@@ -572,8 +676,8 @@ def main(cfg: DictConfig) -> None:
             final_eval_rewards[agent_id].append(
                 eval_stats["training_agents_rewards"][agent_id]
             )
-            winner = max(eval_stats["episode_rewards"].items(), key=lambda x: x[1])[0]
-            final_eval_wins[agent_id].append(winner == agent_id)
+            winner = eval_stats["winner"]
+            final_eval_wins[agent_id].append(winner == agent_id if winner else False)
 
     # Aggregate final results
     all_final_rewards = []
@@ -591,6 +695,18 @@ def main(cfg: DictConfig) -> None:
         f"Win Rate: {final_win_rate:.1f}% "
         f"({sum(all_final_wins)}/{len(all_final_wins)} wins)"
     )
+
+    # Log individual agent final evaluation results if multiple training agents
+    if len(training_agents) > 1:
+        for agent_id in training_agents:
+            agent_final_avg_reward = np.mean(final_eval_rewards[agent_id])
+            agent_final_win_rate = np.mean(final_eval_wins[agent_id]) * 100
+            agent_final_wins_count = sum(final_eval_wins[agent_id])
+            logger.info(
+                f"  {agent_id}: Avg Reward: {agent_final_avg_reward:.3f} | "
+                f"Win Rate: {agent_final_win_rate:.1f}% "
+                f"({agent_final_wins_count}/{num_final_eval} wins)"
+            )
 
     # Save final model (save all unique DQN agents)
     saved_agents = set()
