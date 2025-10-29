@@ -1,0 +1,5 @@
+# Environment configuration parameters for the Sevens card game.
+
+num_players: 4
+render_mode: null
+max_steps: 1000

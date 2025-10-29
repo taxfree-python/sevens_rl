@@ -1,0 +1,10 @@
+# Root configuration for Hydra-driven training runs.
+#
+# The defaults section wires together the different configuration groups so
+# that they can be overridden independently when launching experiments.
+defaults:
+  - algorithm: dqn
+  - training: default
+  - env: sevens
+  - experiment: default
+  - _self_

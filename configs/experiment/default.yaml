@@ -1,0 +1,5 @@
+# Experiment-level metadata and reproducibility controls.
+
+name: "sevens_dqn_hydra"
+seed: 42
+device: "cpu"

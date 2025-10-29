@@ -1,0 +1,35 @@
+# Default configuration for the Deep Q-Network (DQN) algorithm.
+#
+# These parameters control the agent architecture, optimization, and
+# exploration behaviour. They are intentionally grouped under the
+# `algorithm` namespace so that other reinforcement learning methods can
+# provide their own configuration files alongside this one.
+
+hidden_layers: [512, 256, 128]
+learning_rate: 0.0001
+gamma: 0.95
+tau: 0.005
+
+epsilon_start: 1.0
+epsilon_end: 0.05
+epsilon_decay: 0.999
+epsilon_decay_strategy: "exponential"  # 'exponential' or 'linear'
+
+buffer_size: 100000
+batch_size: 64
+min_buffer_size: 1000
+
+target_update_freq: 1
+gradient_clip_norm: 1.0
+prioritized_replay: false
+alpha: 0.6
+beta: 0.4
+
+double_dqn: true
+dueling_dqn: false
+
+dropout: 0.2
+activation: "relu"  # 'relu', 'leaky_relu', 'elu', 'selu'
+
+device: "cpu"  # Training device override for the agent if provided.
+seed: null
