@@ -186,7 +186,9 @@ def train_episode(
     env: SevensEnv,
     agents: dict[str, Any],
     logger: logging.Logger,
-    training_agents: list[str],
+    training_agents: list[str] | str | None = None,
+    *,
+    training_agent: str | None = None,
 ) -> dict[str, Any]:
     """Train for one episode.
 
@@ -194,11 +196,31 @@ def train_episode(
         env: Sevens environment
         agents: Dictionary of agent_id -> Agent (DQN, Random, etc.)
         logger: Logger instance
-        training_agents: List of agent IDs to train
+        training_agents: Collection of agent IDs to train. If None, all agents
+            are trained. Accepts a single agent ID as string for backward
+            compatibility.
+        training_agent: Backward-compatible alias for single training agent.
 
     Returns:
         Dictionary with episode statistics
     """
+    if training_agent is not None:
+        if training_agents is not None:
+            raise ValueError(
+                "Specify either training_agents or training_agent, not both."
+            )
+        training_agents = [training_agent]
+
+    if training_agents is None:
+        training_agents = list(env.possible_agents)
+    elif isinstance(training_agents, str):
+        training_agents = [training_agents]
+    else:
+        training_agents = list(training_agents)
+
+    if not training_agents:
+        training_agents = list(env.possible_agents)
+
     env.reset()
     episode_rewards = {agent_id: 0.0 for agent_id in env.agents}
     episode_steps = 0
@@ -280,14 +302,20 @@ def train_episode(
             epsilon = agent.policy.get_epsilon()
             break
 
-    stats = {
+    stats: dict[str, Any] = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
         "training_agents_rewards": training_agents_rewards,
         "mean_loss": np.mean(training_losses) if training_losses else 0.0,
         "mean_q_value": np.mean(training_q_values) if training_q_values else 0.0,
         "epsilon": epsilon,
+        "training_agents": training_agents,
     }
+
+    if len(training_agents) == 1:
+        single_agent = training_agents[0]
+        stats["training_agent_reward"] = training_agents_rewards[single_agent]
+        stats["training_agent"] = single_agent
 
     return stats
 
@@ -295,18 +323,39 @@ def train_episode(
 def evaluate_episode(
     env: SevensEnv,
     agents: dict[str, Any],
-    training_agents: list[str],
+    training_agents: list[str] | str | None = None,
+    *,
+    training_agent: str | None = None,
 ) -> dict[str, Any]:
     """Evaluate agents for one episode (no training).
 
     Args:
         env: Sevens environment
         agents: Dictionary of agent_id -> Agent (DQN, Random, etc.)
-        training_agents: List of agents being trained
+        training_agents: Collection of agents being trained and tracked.
+            Accepts a single agent ID string for backward compatibility.
+        training_agent: Backward-compatible alias for single training agent.
 
     Returns:
         Dictionary with episode statistics
     """
+    if training_agent is not None:
+        if training_agents is not None:
+            raise ValueError(
+                "Specify either training_agents or training_agent, not both."
+            )
+        training_agents = [training_agent]
+
+    if training_agents is None:
+        training_agents = list(env.possible_agents)
+    elif isinstance(training_agents, str):
+        training_agents = [training_agents]
+    else:
+        training_agents = list(training_agents)
+
+    if not training_agents:
+        training_agents = list(env.possible_agents)
+
     env.reset()
     episode_rewards = {agent_id: 0.0 for agent_id in env.agents}
     episode_steps = 0
@@ -343,11 +392,17 @@ def evaluate_episode(
         agent_id: episode_rewards[agent_id] for agent_id in training_agents
     }
 
-    stats = {
+    stats: dict[str, Any] = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
         "training_agents_rewards": training_agents_rewards,
+        "training_agents": training_agents,
     }
+
+    if len(training_agents) == 1:
+        single_agent = training_agents[0]
+        stats["training_agent_reward"] = training_agents_rewards[single_agent]
+        stats["training_agent"] = single_agent
 
     return stats
 
