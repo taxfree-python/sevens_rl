@@ -64,7 +64,7 @@ def create_dqn_agent_from_config(
     Examples
     --------
     >>> cfg = load_config("configs/train_dqn.yaml")
-    >>> agent = create_dqn_agent_from_config(cfg, state_dim=157, action_dim=53)
+    >>> agent = create_dqn_agent_from_config(cfg, state_dim=217, action_dim=53)
     """
     algorithm_cfg = cfg.get("algorithm", cfg.get("agent", cfg))
     training_cfg = cfg.get("training", {})
