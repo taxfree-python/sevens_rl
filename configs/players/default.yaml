@@ -1,0 +1,32 @@
+# Default multi-agent configuration
+# This serves as the base configuration that can be overridden by presets
+
+# Number of players in the game (2-4)
+num_players: 4
+
+# Mode: determines the basic setup
+# - self_play: All players use DQN with shared network
+# - vs_random: One DQN player vs random opponents
+# - vs_baselines: One DQN player vs baseline agents
+# - custom: Fully custom player configuration
+mode: self_play
+
+# Shared network configuration
+# When true, all DQN players share the same Q-network
+shared_network: true
+
+# Which players to train (list of player indices or "all")
+# Examples: [0], [0, 1], "all"
+training_players: all
+
+# Default agent type for non-DQN players (used in vs_random, vs_baselines modes)
+# Options: random, nearest_sevens
+default_opponent: random
+
+# Custom player configuration (only used when mode=custom)
+# Override this to specify individual player types
+players: null
+
+# Network configurations (only used when shared_network=false)
+# Allows defining multiple independent networks
+networks: null

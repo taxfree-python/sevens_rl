@@ -1,0 +1,11 @@
+# Training: 1 DQN agent vs 3 random opponents
+# Good for initial training and baseline comparison
+
+defaults:
+  - default
+
+num_players: 4
+mode: vs_random
+shared_network: false  # Only one network needed
+training_players: [0]  # Only player_0 trains
+default_opponent: random
