@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Union, cast
 
 import hydra
 import numpy as np
@@ -288,8 +288,20 @@ def train_episode(
     prev_observations = {}
     prev_actions = {}
 
+    # Create network representatives to avoid duplicate training on shared networks
+    # For shared networks, only the first agent in training_agents will call train_step
+    network_representatives = {}
+    for agent_id in training_agents:
+        agent = agents[agent_id]
+        if hasattr(agent, "train_step"):
+            network_id = id(agent)
+            if network_id not in network_representatives:
+                network_representatives[network_id] = agent_id
+
     for agent_id in env.agent_iter():
         observation, reward, termination, truncation, info = env.last()
+        # Cast observation for Pylance type checking
+        observation = cast(dict[str, Any], observation)
         episode_rewards[agent_id] += reward
         done = termination or truncation
 
@@ -298,7 +310,7 @@ def train_episode(
             if agent_id in training_agents and agent_id in prev_observations:
                 # Only DQNAgents can store experiences
                 agent = agents[agent_id]
-                if hasattr(agent, "store_experience"):
+                if isinstance(agent, DQNAgent):
                     agent.store_experience(
                         prev_observations[agent_id],
                         prev_actions[agent_id],
@@ -306,13 +318,13 @@ def train_episode(
                         observation,
                         done=True,
                     )
-            env.step(None)
+            env.step(None)  # type: ignore[arg-type]
             continue
 
         # Store previous transition if exists
         if agent_id in training_agents and agent_id in prev_observations:
             agent = agents[agent_id]
-            if hasattr(agent, "store_experience"):
+            if isinstance(agent, DQNAgent):
                 agent.store_experience(
                     prev_observations[agent_id],
                     prev_actions[agent_id],
@@ -332,10 +344,17 @@ def train_episode(
         env.step(action)
         episode_steps += 1
 
-        # Train the training agents
+        # Train the training agents (only once per unique network)
         if agent_id in training_agents:
             agent = agents[agent_id]
-            if hasattr(agent, "train_step"):
+            network_id = id(agent)
+
+            # Only train if this agent is the representative for its network
+            # This prevents duplicate training when multiple agents share the same network
+            if (
+                network_representatives.get(network_id) == agent_id
+                and isinstance(agent, DQNAgent)
+            ):
                 train_result = agent.train_step()
                 if train_result and "loss" in train_result:
                     training_losses.append(train_result["loss"])
@@ -343,7 +362,7 @@ def train_episode(
 
     # End episode for DQN agents
     for agent in agents.values():
-        if hasattr(agent, "end_episode"):
+        if isinstance(agent, DQNAgent):
             agent.end_episode()
 
     # Calculate statistics for training agents
@@ -355,7 +374,7 @@ def train_episode(
     epsilon = None
     for agent_id in training_agents:
         agent = agents[agent_id]
-        if hasattr(agent, "policy"):
+        if isinstance(agent, DQNAgent):
             epsilon = agent.policy.get_epsilon()
             break
 
@@ -409,18 +428,20 @@ def evaluate_episode(
     original_epsilons = {}
     processed_agents = set()
     for _agent_id, agent in agents.items():
-        if hasattr(agent, "policy") and id(agent) not in processed_agents:
+        if isinstance(agent, DQNAgent) and id(agent) not in processed_agents:
             original_epsilons[id(agent)] = agent.policy.get_epsilon()
             agent.policy.set_epsilon(0.0)
             processed_agents.add(id(agent))
 
     for agent_id in env.agent_iter():
         observation, reward, termination, truncation, info = env.last()
+        # Cast observation for Pylance type checking
+        observation = cast(dict[str, Any], observation)
         episode_rewards[agent_id] += reward
         done = termination or truncation
 
         if done:
-            env.step(None)
+            env.step(None)  # type: ignore[arg-type]
             continue
 
         # Select action (no exploration for DQN agents)
@@ -431,7 +452,7 @@ def evaluate_episode(
     # Restore epsilon values for DQN agents
     for _agent_id, agent in agents.items():
         agent_id_key = id(agent)
-        if agent_id_key in original_epsilons and hasattr(agent, "policy"):
+        if agent_id_key in original_epsilons and isinstance(agent, DQNAgent):
             agent.policy.set_epsilon(original_epsilons[agent_id_key])
 
     # Calculate statistics for training agents
@@ -510,9 +531,9 @@ def main(cfg: DictConfig) -> None:
     agents, training_agents = setup_agents(cfg, env, state_dim, action_dim, logger)
 
     # Get Q-Network parameters from first DQN agent
-    first_dqn_agent = None
+    first_dqn_agent: DQNAgent | None = None
     for agent in agents.values():
-        if hasattr(agent, "q_network"):
+        if isinstance(agent, DQNAgent):
             first_dqn_agent = agent
             break
 
@@ -654,7 +675,7 @@ def main(cfg: DictConfig) -> None:
             saved_agents = set()
             for agent_id in training_agents:
                 agent = agents[agent_id]
-                if hasattr(agent, "save") and id(agent) not in saved_agents:
+                if isinstance(agent, DQNAgent) and id(agent) not in saved_agents:
                     checkpoint_path = checkpoints_dir / f"{agent_id}_{episode}.pt"
                     agent.save(str(checkpoint_path))
                     logger.info(f"Saved checkpoint: {checkpoint_path}")
@@ -712,7 +733,7 @@ def main(cfg: DictConfig) -> None:
     saved_agents = set()
     for agent_id in training_agents:
         agent = agents[agent_id]
-        if hasattr(agent, "save") and id(agent) not in saved_agents:
+        if isinstance(agent, DQNAgent) and id(agent) not in saved_agents:
             final_checkpoint_path = checkpoints_dir / f"{agent_id}_final.pt"
             agent.save(str(final_checkpoint_path))
             logger.info(f"Saved final model: {final_checkpoint_path}")

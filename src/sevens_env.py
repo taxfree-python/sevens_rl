@@ -23,6 +23,11 @@ RANKS = list(range(1, 14))  # 1(A) から 13(K) まで
 NUM_CARDS = 52
 SEVEN_RANK = 7
 
+# Card play order normalization
+# Maximum number of cards that can be played during a game
+# (excluding 4 sevens which are placed initially)
+MAX_PLAYABLE_CARDS = NUM_CARDS - 4  # 48
+
 
 class Card:
     """
@@ -257,6 +262,36 @@ class SevensEnv(AECEnv):
 
         return starting_player
 
+    def _normalize_card_play_order(self, card_play_order: np.ndarray) -> np.ndarray:
+        """Normalize card play order to [0, 1] range.
+
+        This method can be easily modified to experiment with different
+        normalization strategies.
+
+        Current strategy (A): Normalize by maximum playable cards (48).
+        - Represents the absolute order in which cards were played.
+        - Independent of episode length and number of passes.
+        - Example: 10th card played = 10/48 ≈ 0.21
+
+        Alternative strategy (B): Normalize by current play count.
+        - Represents the relative game progress.
+        - Dependent on episode length.
+        - Implementation: card_play_order / max(self.play_count, 1)
+
+        Parameters
+        ----------
+        card_play_order : np.ndarray
+            Array where each element represents when that card was played
+            (0 if not played yet, 1-48 for played cards)
+
+        Returns
+        -------
+        np.ndarray
+            Normalized card play order in [0, 1] range
+        """
+        # Strategy A: Normalize by maximum playable cards
+        return card_play_order.astype(np.float32) / MAX_PLAYABLE_CARDS
+
     def observe(self, agent: str) -> dict:
         """
         Get observation for the agent.
@@ -283,7 +318,9 @@ class SevensEnv(AECEnv):
         current_player[current_player_idx] = 1
 
         # Normalize card_play_order to [0, 1] range for neural network input
-        card_play_order_normalized = self.card_play_order.astype(np.float32) / NUM_CARDS
+        card_play_order_normalized = self._normalize_card_play_order(
+            self.card_play_order
+        )
 
         observation = {
             "board": self.board.copy(),
