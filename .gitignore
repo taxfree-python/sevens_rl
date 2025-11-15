@@ -58,3 +58,6 @@ multirun/
 
 # TensorBoard
 runs/
+
+# Model checkpoints
+checkpoints/
