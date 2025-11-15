@@ -7,4 +7,5 @@ defaults:
   - training: default
   - env: sevens
   - experiment: default
+  - players: self_play  # Multi-agent configuration
   - _self_
