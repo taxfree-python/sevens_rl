@@ -268,10 +268,11 @@ class SevensEnv(AECEnv):
         This method can be easily modified to experiment with different
         normalization strategies.
 
-        Current strategy (A): Normalize by maximum playable cards (48).
+        Current strategy (A): Normalize by total number of cards (52).
         - Represents the absolute order in which cards were played.
         - Independent of episode length and number of passes.
-        - Example: 10th card played = 10/48 ≈ 0.21
+        - Ensures values stay in [0, 1] range since play_count max is 52
+        - Example: 10th card played = 10/52 ≈ 0.19
 
         Alternative strategy (B): Normalize by current play count.
         - Represents the relative game progress.
@@ -282,15 +283,17 @@ class SevensEnv(AECEnv):
         ----------
         card_play_order : np.ndarray
             Array where each element represents when that card was played
-            (0 if not played yet, 1-48 for played cards)
+            (0 if not played yet, 1-52 for played cards)
 
         Returns
         -------
         np.ndarray
             Normalized card play order in [0, 1] range
         """
-        # Strategy A: Normalize by maximum playable cards
-        return card_play_order.astype(np.float32) / MAX_PLAYABLE_CARDS
+        # Strategy A: Normalize by total number of cards (52)
+        # This ensures values stay in [0, 1] range since play_count
+        # increments for initial sevens (4) + remaining cards (max 48) = 52
+        return card_play_order.astype(np.float32) / NUM_CARDS
 
     def observe(self, agent: str) -> dict:
         """

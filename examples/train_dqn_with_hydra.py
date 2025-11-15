@@ -24,6 +24,7 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 from src.rl.dqn_agent import DQNAgent
+from src.utils.env_utils import calculate_action_dim, calculate_state_dim
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,9 @@ def main(cfg: DictConfig) -> None:
         np.random.seed(experiment_cfg.seed)
 
     # Calculate state and action dimensions for Sevens game
-    # State: board (52) + hand (52) + action_mask (53) + hand_counts (num_players)
-    #        + card_play_order (52) + current_player (num_players)
     num_players = cfg.env.num_players
-    state_dim = 52 + 52 + 53 + num_players + 52 + num_players
-    action_dim = 53
+    state_dim = calculate_state_dim(num_players)
+    action_dim = calculate_action_dim()
 
     # Create DQN agent
     logger.info("Creating DQN agent...")

@@ -10,6 +10,7 @@ import pytest
 from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
 from src.train_dqn import evaluate_episode, train_episode
+from src.utils.env_utils import calculate_state_dim
 
 
 def create_test_agent(**kwargs):
@@ -260,14 +261,7 @@ def test_training_with_different_num_players():
         env = SevensEnv(num_players=num_players)
 
         # Calculate state_dim for this number of players
-        state_dim = (
-            52  # board
-            + 52  # hand
-            + 53  # action_mask
-            + num_players  # hand_counts
-            + 52  # card_play_order
-            + num_players  # current_player
-        )
+        state_dim = calculate_state_dim(num_players)
 
         # Create agents with correct state_dim
         agents = {}

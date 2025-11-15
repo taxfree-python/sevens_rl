@@ -14,6 +14,7 @@ from omegaconf import DictConfig, OmegaConf
 from src.agents import NearestSevensAgent, RandomAgent
 from src.rl.dqn_agent import DQNAgent
 from src.sevens_env import SevensEnv
+from src.utils.env_utils import calculate_action_dim, calculate_state_dim
 from src.utils.hydra_utils import (
     create_dqn_agent_from_config,
     get_env_params,
@@ -514,15 +515,8 @@ def main(cfg: DictConfig) -> None:
 
     # Calculate state and action dimensions
     num_players = env_params["num_players"]
-    state_dim = (
-        52  # board
-        + 52  # hand
-        + 53  # action_mask
-        + num_players  # hand_counts
-        + 52  # card_play_order
-        + num_players  # current_player
-    )
-    action_dim = 53  # 52 cards + 1 pass
+    state_dim = calculate_state_dim(num_players)
+    action_dim = calculate_action_dim()
 
     logger.info(f"State dimension: {state_dim} (for {num_players} players)")
     logger.info(f"Action dimension: {action_dim}")
