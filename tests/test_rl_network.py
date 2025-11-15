@@ -3,11 +3,12 @@
 import torch
 
 from src.rl.network import QNetwork
+from src.utils.env_utils import calculate_state_dim
 
 
 def test_qnetwork_initialization():
     """Test Q-network initialization."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     # Test default initialization
@@ -30,7 +31,7 @@ def test_qnetwork_initialization():
 
 def test_qnetwork_forward_shape():
     """Test Q-network forward pass output shape."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
     batch_size = 32
 
@@ -49,7 +50,7 @@ def test_qnetwork_forward_shape():
 
 def test_qnetwork_dueling_architecture():
     """Test Dueling DQN architecture."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     network = QNetwork(
@@ -71,7 +72,7 @@ def test_qnetwork_dueling_architecture():
 
 def test_qnetwork_activation_functions():
     """Test different activation functions."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     activations = ["relu", "tanh", "elu", "leaky_relu", "selu"]
@@ -89,7 +90,7 @@ def test_qnetwork_activation_functions():
 
 def test_qnetwork_dropout():
     """Test dropout in network."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     network = QNetwork(
@@ -116,7 +117,7 @@ def test_qnetwork_dropout():
 
 def test_qnetwork_parameter_count():
     """Test get_num_parameters method."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     network = QNetwork(input_dim=input_dim, output_dim=output_dim)
@@ -132,7 +133,7 @@ def test_qnetwork_parameter_count():
 
 def test_qnetwork_gradient_flow():
     """Test gradient flow through network."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     network = QNetwork(input_dim=input_dim, output_dim=output_dim)
@@ -155,7 +156,7 @@ def test_qnetwork_gradient_flow():
 
 def test_qnetwork_dueling_identifiability():
     """Test that Dueling DQN maintains identifiability constraint."""
-    input_dim = 157
+    input_dim = calculate_state_dim(num_players=4)
     output_dim = 53
 
     network = QNetwork(
