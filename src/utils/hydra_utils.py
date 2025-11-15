@@ -64,7 +64,7 @@ def create_dqn_agent_from_config(
     Examples
     --------
     >>> cfg = load_config("configs/train_dqn.yaml")
-    >>> agent = create_dqn_agent_from_config(cfg, state_dim=157, action_dim=53)
+    >>> agent = create_dqn_agent_from_config(cfg, state_dim=217, action_dim=53)
     """
     algorithm_cfg = cfg.get("algorithm", cfg.get("agent", cfg))
     training_cfg = cfg.get("training", {})
@@ -162,6 +162,9 @@ def get_training_params(cfg: DictConfig) -> dict[str, Any]:
         "min_replay_size": training_cfg.get(
             "min_replay_size", algorithm_cfg.get("min_buffer_size", 1000)
         ),
+        "eval_freq": training_cfg.get("eval_freq", 100),
+        "save_freq": training_cfg.get("save_freq", 1000),
+        "log_freq": training_cfg.get("log_freq", 10),
     }
 
 
