@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from src.rl.dqn_agent import DQNAgent
@@ -24,7 +27,7 @@ def create_test_agent(**kwargs):
         A DQN agent configured for testing.
     """
     defaults = {
-        "state_dim": calculate_state_dim(num_players=4),
+        "state_dim": 217,  # Updated for new observation space
         "action_dim": 53,
         "hidden_layers": [64, 32],  # Smaller for faster tests
         "learning_rate": 0.001,
@@ -198,3 +201,127 @@ def test_train_and_evaluate_integration(env, agents):
 
     # Should complete without errors
     assert eval_stats["episode_steps"] > 0
+
+
+def test_agent_save_load_integration(env, agents):
+    """Test that agent can be saved and loaded during training."""
+    from src.utils.logger import setup_logger
+
+    logger = setup_logger(name="test_train", level="ERROR")
+
+    # Train for a couple episodes
+    for _ in range(2):
+        train_episode(env, agents, logger, training_agents=["player_0"])
+
+    # Save agent
+    with tempfile.TemporaryDirectory() as tmpdir:
+        save_path = Path(tmpdir) / "agent.pt"
+        agents["player_0"].save(str(save_path))
+
+        # Verify file was created
+        assert save_path.exists()
+
+        # Load into a new agent
+        new_agent = create_test_agent()
+        new_agent.load(str(save_path))
+
+        # Check that key stats match
+        assert new_agent.episode_count == agents["player_0"].episode_count
+        assert new_agent.total_steps == agents["player_0"].total_steps
+
+
+def test_different_training_agents(env):
+    """Test training different agents (not just player_0)."""
+    from src.utils.logger import setup_logger
+
+    logger = setup_logger(name="test_train", level="ERROR")
+
+    # Create agents
+    agents = {}
+    for agent_id in env.possible_agents:
+        agent = create_test_agent()
+        agent.name = agent_id
+        agents[agent_id] = agent
+
+    # Train player_1 instead of player_0
+    stats = train_episode(env, agents, logger, training_agents=["player_1"])
+
+    # Should work without errors
+    assert "training_agent_reward" in stats
+    assert stats["episode_steps"] > 0
+
+
+def test_training_with_different_num_players():
+    """Test training with different number of players."""
+    from src.utils.logger import setup_logger
+
+    logger = setup_logger(name="test_train", level="ERROR")
+
+    for num_players in [2, 3, 4]:
+        env = SevensEnv(num_players=num_players)
+
+        # Calculate state_dim for this number of players
+        state_dim = calculate_state_dim(num_players)
+
+        # Create agents with correct state_dim
+        agents = {}
+        for agent_id in env.possible_agents:
+            agent = create_test_agent(state_dim=state_dim)
+            agent.name = agent_id
+            agents[agent_id] = agent
+
+        # Train one episode
+        stats = train_episode(env, agents, logger, training_agents=["player_0"])
+
+        # Should work for all player counts
+        assert len(stats["episode_rewards"]) == num_players
+        assert stats["episode_steps"] > 0
+
+
+@pytest.mark.slow
+def test_training_session_smoke_test(env, agents):
+    """Comprehensive smoke test: Run a mini training session.
+
+    This test simulates a complete training session with training,
+    evaluation, and checkpointing. Marked as slow since it runs
+    more episodes.
+    """
+    from src.utils.logger import setup_logger
+
+    logger = setup_logger(name="test_train", level="ERROR")
+
+    num_episodes = 20
+    eval_freq = 5
+    training_rewards = []
+    eval_rewards = []
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        checkpoints_dir = Path(tmpdir) / "checkpoints"
+        checkpoints_dir.mkdir(exist_ok=True, parents=True)
+
+        for episode in range(1, num_episodes + 1):
+            # Train
+            stats = train_episode(env, agents, logger, training_agents=["player_0"])
+            training_rewards.append(stats["training_agents_rewards"]["player_0"])
+
+            # Evaluate
+            if episode % eval_freq == 0:
+                eval_stats = evaluate_episode(env, agents, training_agents=["player_0"])
+                eval_rewards.append(eval_stats["training_agents_rewards"]["player_0"])
+
+                # Save checkpoint
+                checkpoint_path = checkpoints_dir / f"agent_{episode}.pt"
+                agents["player_0"].save(str(checkpoint_path))
+                assert checkpoint_path.exists()
+
+        # Verify we collected data
+        assert len(training_rewards) == num_episodes
+        assert len(eval_rewards) == num_episodes // eval_freq
+
+        # Verify checkpoints exist
+        checkpoints = list(checkpoints_dir.glob("agent_*.pt"))
+        assert len(checkpoints) == num_episodes // eval_freq
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
