@@ -295,7 +295,7 @@ def test_dqn_agent_observation_to_state(dqn_agent):
     state = dqn_agent._observation_to_state(observation)
 
     assert isinstance(state, np.ndarray)
-    assert state.shape == (217,)  # 52 + 52 + 53 + 4 + 52 + 4
+    assert state.shape == (calculate_state_dim(num_players=4),)
     assert state.dtype == np.float32
 
 
