@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from src.rl.dqn_agent import DQNAgent
+from src.utils.env_utils import calculate_state_dim
 
 
 def create_test_agent(**kwargs):
@@ -24,7 +25,7 @@ def create_test_agent(**kwargs):
         A DQN agent configured for testing.
     """
     defaults = {
-        "state_dim": 217,  # Updated for new observation space (4 players)
+        "state_dim": calculate_state_dim(num_players=4),
         "action_dim": 53,
         "hidden_layers": [128, 64],
         "learning_rate": 0.001,
@@ -64,7 +65,7 @@ def create_test_observation(num_players=4, **kwargs):
         "hand": np.zeros(52, dtype=np.int8),
         "action_mask": np.ones(53, dtype=np.int8),
         "hand_counts": np.array([13, 13, 13, 13][:num_players], dtype=np.int8),
-        "card_play_order": np.zeros(52, dtype=np.int8),
+        "card_play_order": np.zeros(52, dtype=np.float32),
         "current_player": np.zeros(num_players, dtype=np.int8),
     }
     observation["current_player"][0] = 1  # Default to first player
@@ -80,7 +81,7 @@ def dqn_agent():
 
 def test_dqn_agent_initialization(dqn_agent):
     """Test DQN agent initialization."""
-    assert dqn_agent.state_dim == 217
+    assert dqn_agent.state_dim == calculate_state_dim(num_players=4)
     assert dqn_agent.action_dim == 53
     assert dqn_agent.gamma == 0.95
     assert dqn_agent.batch_size == 32

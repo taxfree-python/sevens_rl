@@ -23,11 +23,6 @@ RANKS = list(range(1, 14))  # 1(A) から 13(K) まで
 NUM_CARDS = 52
 SEVEN_RANK = 7
 
-# Card play order normalization
-# Maximum number of cards that can be played during a game
-# (excluding 4 sevens which are placed initially)
-MAX_PLAYABLE_CARDS = NUM_CARDS - 4  # 48
-
 
 class Card:
     """
