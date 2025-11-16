@@ -29,12 +29,17 @@ def _normalize_training_agents(
 ) -> list[str]:
     """Normalize training_agents parameter to a list of agent IDs.
 
-    Args:
-        training_agents: Collection of agent IDs to train, or None for all agents.
-            Can be a list of agent IDs, a single agent ID string, or None.
-        possible_agents: List of all possible agent IDs in the environment
+    Parameters
+    ----------
+    training_agents : list[str] | str | None
+        Collection of agent IDs to train, or None for all agents.
+        Can be a list of agent IDs, a single agent ID string, or None.
+    possible_agents : list[str]
+        List of all possible agent IDs in the environment
 
-    Returns:
+    Returns
+    -------
+    list[str]
         List of agent IDs to train
     """
     if training_agents is None:
@@ -53,14 +58,21 @@ def train_episode(
 ) -> dict[str, Any]:
     """Train for one episode.
 
-    Args:
-        env: Sevens environment
-        agents: Dictionary of agent_id -> DQNAgent
-        logger: Logger instance
-        training_agents: Collection of agent IDs to train. If None, all agents
-            are trained. Can be a list of agent IDs or a single agent ID string.
+    Parameters
+    ----------
+    env : SevensEnv
+        Sevens environment
+    agents : dict[str, DQNAgent]
+        Dictionary of agent_id -> DQNAgent
+    logger : logging.Logger
+        Logger instance
+    training_agents : list[str] | str | None, optional
+        Collection of agent IDs to train. If None, all agents
+        are trained. Can be a list of agent IDs or a single agent ID string.
 
-    Returns:
+    Returns
+    -------
+    dict[str, Any]
         Dictionary with episode statistics
     """
     training_agents = _normalize_training_agents(training_agents, env.possible_agents)
@@ -184,13 +196,19 @@ def evaluate_episode(
 ) -> dict[str, Any]:
     """Evaluate agents for one episode (no training).
 
-    Args:
-        env: Sevens environment
-        agents: Dictionary of agent_id -> DQNAgent
-        training_agents: Collection of agents being tracked.
-            Can be a list of agent IDs or a single agent ID string.
+    Parameters
+    ----------
+    env : SevensEnv
+        Sevens environment
+    agents : dict[str, DQNAgent]
+        Dictionary of agent_id -> DQNAgent
+    training_agents : list[str] | str | None, optional
+        Collection of agents being tracked.
+        Can be a list of agent IDs or a single agent ID string.
 
-    Returns:
+    Returns
+    -------
+    dict[str, Any]
         Dictionary with episode statistics
     """
     training_agents = _normalize_training_agents(training_agents, env.possible_agents)
@@ -261,8 +279,10 @@ def main(cfg: DictConfig) -> None:
     This is a simplified version that creates DQN agents directly in main().
     All players use DQN agents (self-play mode only).
 
-    Args:
-        cfg: Hydra configuration
+    Parameters
+    ----------
+    cfg : DictConfig
+        Hydra configuration
     """
     # Setup logging
     logger = setup_logger(name="train_dqn", level=logging.INFO)
