@@ -1,0 +1,30 @@
+# Self-play with 2 independent networks (2v2 scenario)
+# Two pairs of agents with shared networks compete
+
+defaults:
+  - default
+
+num_players: 4
+mode: custom
+shared_network: false
+training_players: all
+
+networks:
+  network_a:
+    shared_by: [0, 1]
+  network_b:
+    shared_by: [2, 3]
+
+players:
+  player_0:
+    type: dqn
+    network: network_a
+  player_1:
+    type: dqn
+    network: network_a
+  player_2:
+    type: dqn
+    network: network_b
+  player_3:
+    type: dqn
+    network: network_b
