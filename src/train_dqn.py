@@ -150,12 +150,9 @@ def train_episode(
                     training_losses.append(train_result["loss"])
                     training_q_values.append(train_result["q_value_mean"])
 
-    # End episode for DQN agents (once per unique agent object)
-    processed_agents = set()
+    # End episode for DQN agents
     for agent in agents.values():
-        if id(agent) not in processed_agents:
-            agent.end_episode()
-            processed_agents.add(id(agent))
+        agent.end_episode()
 
     # Calculate statistics for training agents
     training_agents_rewards = {
@@ -244,13 +241,11 @@ def evaluate_episode(
         env.step(action)
         episode_steps += 1
 
-    # Restore epsilon values for DQN agents (once per unique agent object)
-    processed_agents = set()
+    # Restore epsilon values for DQN agents
     for _agent_id, agent in agents.items():
         agent_id_key = id(agent)
-        if agent_id_key in original_epsilons and agent_id_key not in processed_agents:
+        if agent_id_key in original_epsilons:
             agent.policy.set_epsilon(original_epsilons[agent_id_key])
-            processed_agents.add(agent_id_key)
 
     # Calculate statistics for training agents
     training_agents_rewards = {
