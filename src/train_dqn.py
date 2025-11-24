@@ -150,9 +150,13 @@ def train_episode(
                     training_losses.append(train_result["loss"])
                     training_q_values.append(train_result["q_value_mean"])
 
-    # End episode for DQN agents
+    # End episode for DQN agents (only once per unique network)
+    seen_agents = set()
     for agent in agents.values():
-        agent.end_episode()
+        agent_id = id(agent)
+        if agent_id not in seen_agents:
+            agent.end_episode()
+            seen_agents.add(agent_id)
 
     # Calculate statistics for training agents
     training_agents_rewards = {
