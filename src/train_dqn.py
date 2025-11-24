@@ -50,6 +50,47 @@ def _normalize_training_agents(
         return list(training_agents)
 
 
+def _get_winner(env: SevensEnv) -> str | None:
+    """Get the winner from the environment's finished order.
+
+    Parameters
+    ----------
+    env : SevensEnv
+        Sevens environment
+
+    Returns
+    -------
+    str | None
+        The winning agent ID (first to finish), or None if no winner
+    """
+    return env.finished_order[0] if env.finished_order else None
+
+
+def _add_single_agent_stats(
+    stats: dict[str, Any],
+    training_agents: list[str],
+    training_agents_rewards: dict[str, float],
+) -> None:
+    """Add single-agent specific statistics to stats dictionary.
+
+    If there is only one training agent, adds 'training_agent_reward'
+    and 'training_agent' keys to the stats dictionary.
+
+    Parameters
+    ----------
+    stats : dict[str, Any]
+        Statistics dictionary to update (modified in-place)
+    training_agents : list[str]
+        List of training agent IDs
+    training_agents_rewards : dict[str, float]
+        Dictionary of agent_id -> reward
+    """
+    if len(training_agents) == 1:
+        single_agent = training_agents[0]
+        stats["training_agent_reward"] = training_agents_rewards[single_agent]
+        stats["training_agent"] = single_agent
+
+
 def train_episode(
     env: SevensEnv,
     agents: dict[str, DQNAgent],
@@ -88,7 +129,9 @@ def train_episode(
     prev_actions = {}
 
     # Create network representatives to avoid duplicate training on shared networks
-    # For shared networks, only the first agent in training_agents will call train_step
+    # Maps each unique network (by id) to one representative agent.
+    # This prevents duplicate training when multiple agents share the same network object
+    # (e.g., in self-play where all agents use the same Q-network).
     network_representatives = {}
     for agent_id in training_agents:
         agent = agents[agent_id]
@@ -171,7 +214,7 @@ def train_episode(
         break
 
     # Determine winner from finished_order (first to finish wins)
-    winner = env.finished_order[0] if env.finished_order else None
+    winner = _get_winner(env)
 
     stats: dict[str, Any] = {
         "episode_steps": episode_steps,
@@ -185,10 +228,7 @@ def train_episode(
         "finished_order": env.finished_order,
     }
 
-    if len(training_agents) == 1:
-        single_agent = training_agents[0]
-        stats["training_agent_reward"] = training_agents_rewards[single_agent]
-        stats["training_agent"] = single_agent
+    _add_single_agent_stats(stats, training_agents, training_agents_rewards)
 
     return stats
 
@@ -257,7 +297,7 @@ def evaluate_episode(
     }
 
     # Determine winner
-    winner = env.finished_order[0] if env.finished_order else None
+    winner = _get_winner(env)
 
     stats: dict[str, Any] = {
         "episode_steps": episode_steps,
@@ -268,10 +308,7 @@ def evaluate_episode(
         "finished_order": env.finished_order,
     }
 
-    if len(training_agents) == 1:
-        single_agent = training_agents[0]
-        stats["training_agent_reward"] = training_agents_rewards[single_agent]
-        stats["training_agent"] = single_agent
+    _add_single_agent_stats(stats, training_agents, training_agents_rewards)
 
     return stats
 
