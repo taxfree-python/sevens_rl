@@ -336,9 +336,7 @@ def main(cfg: DictConfig) -> None:
     # All agents are training agents in self-play
     training_agents = list(env.possible_agents)
 
-    logger.info(
-        f"Q-Network parameters: {shared_agent.q_network.get_num_parameters()}"
-    )
+    logger.info(f"Q-Network parameters: {shared_agent.q_network.get_num_parameters()}")
 
     # Setup output directories
     output_dir = Path.cwd()  # Hydra sets CWD to output directory
