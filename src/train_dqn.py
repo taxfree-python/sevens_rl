@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import NotRequired, TypedDict
 
 import hydra
 import numpy as np
@@ -21,6 +21,83 @@ from src.utils.hydra_utils import (
     get_training_params,
 )
 from src.utils.logger import setup_logger
+
+
+class TrainingEpisodeStats(TypedDict):
+    """Statistics returned from a training episode.
+
+    Attributes
+    ----------
+    episode_steps : int
+        Total number of steps in the episode
+    episode_rewards : dict[str, float]
+        Rewards for each agent in the episode
+    training_agents_rewards : dict[str, float]
+        Rewards for training agents only
+    mean_loss : float
+        Mean loss across all training steps
+    mean_q_value : float
+        Mean Q-value across all training steps
+    epsilon : float | None
+        Current epsilon value for exploration
+    training_agents : list[str]
+        List of agent IDs being trained
+    winner : str | None
+        Agent ID of the winner (first to finish)
+    finished_order : list[str]
+        Order in which agents finished
+    training_agent_reward : float
+        Reward for single training agent (only when len(training_agents) == 1)
+    training_agent : str
+        Agent ID of single training agent (only when len(training_agents) == 1)
+    """
+
+    episode_steps: int
+    episode_rewards: dict[str, float]
+    training_agents_rewards: dict[str, float]
+    mean_loss: float
+    mean_q_value: float
+    epsilon: float | None
+    training_agents: list[str]
+    winner: str | None
+    finished_order: list[str]
+    # Optional fields for single-agent training
+    training_agent_reward: NotRequired[float]
+    training_agent: NotRequired[str]
+
+
+class EvaluationEpisodeStats(TypedDict):
+    """Statistics returned from an evaluation episode.
+
+    Attributes
+    ----------
+    episode_steps : int
+        Total number of steps in the episode
+    episode_rewards : dict[str, float]
+        Rewards for each agent in the episode
+    training_agents_rewards : dict[str, float]
+        Rewards for tracked agents
+    training_agents : list[str]
+        List of agent IDs being tracked
+    winner : str | None
+        Agent ID of the winner (first to finish)
+    finished_order : list[str]
+        Order in which agents finished
+    training_agent_reward : float
+        Reward for single training agent (only when len(training_agents) == 1)
+    training_agent : str
+        Agent ID of single training agent (only when len(training_agents) == 1)
+    """
+
+    episode_steps: int
+    episode_rewards: dict[str, float]
+    training_agents_rewards: dict[str, float]
+    training_agents: list[str]
+    winner: str | None
+    finished_order: list[str]
+    # Optional fields for single-agent training
+    training_agent_reward: NotRequired[float]
+    training_agent: NotRequired[str]
 
 
 def _normalize_training_agents(
@@ -67,7 +144,7 @@ def _get_winner(env: SevensEnv) -> str | None:
 
 
 def _add_single_agent_stats(
-    stats: dict[str, Any],
+    stats: TrainingEpisodeStats | EvaluationEpisodeStats,
     training_agents: list[str],
     training_agents_rewards: dict[str, float],
 ) -> None:
@@ -78,7 +155,7 @@ def _add_single_agent_stats(
 
     Parameters
     ----------
-    stats : dict[str, Any]
+    stats : TrainingEpisodeStats | EvaluationEpisodeStats
         Statistics dictionary to update (modified in-place)
     training_agents : list[str]
         List of training agent IDs
@@ -96,7 +173,7 @@ def train_episode(
     agents: dict[str, DQNAgent],
     logger: logging.Logger,
     training_agents: list[str] | str | None = None,
-) -> dict[str, Any]:
+) -> TrainingEpisodeStats:
     """Train for one episode.
 
     Parameters
@@ -113,8 +190,8 @@ def train_episode(
 
     Returns
     -------
-    dict[str, Any]
-        Dictionary with episode statistics
+    TrainingEpisodeStats
+        Dictionary with episode statistics including loss, Q-values, and rewards
     """
     training_agents = _normalize_training_agents(training_agents, env.possible_agents)
 
@@ -216,12 +293,12 @@ def train_episode(
     # Determine winner from finished_order (first to finish wins)
     winner = _get_winner(env)
 
-    stats: dict[str, Any] = {
+    stats: TrainingEpisodeStats = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
         "training_agents_rewards": training_agents_rewards,
-        "mean_loss": np.mean(training_losses) if training_losses else 0.0,
-        "mean_q_value": np.mean(training_q_values) if training_q_values else 0.0,
+        "mean_loss": float(np.mean(training_losses)) if training_losses else 0.0,
+        "mean_q_value": float(np.mean(training_q_values)) if training_q_values else 0.0,
         "epsilon": epsilon,
         "training_agents": training_agents,
         "winner": winner,
@@ -237,7 +314,7 @@ def evaluate_episode(
     env: SevensEnv,
     agents: dict[str, DQNAgent],
     training_agents: list[str] | str | None = None,
-) -> dict[str, Any]:
+) -> EvaluationEpisodeStats:
     """Evaluate agents for one episode (no training).
 
     Parameters
@@ -252,8 +329,8 @@ def evaluate_episode(
 
     Returns
     -------
-    dict[str, Any]
-        Dictionary with episode statistics
+    EvaluationEpisodeStats
+        Dictionary with episode statistics (no training metrics)
     """
     training_agents = _normalize_training_agents(training_agents, env.possible_agents)
 
@@ -299,7 +376,7 @@ def evaluate_episode(
     # Determine winner
     winner = _get_winner(env)
 
-    stats: dict[str, Any] = {
+    stats: EvaluationEpisodeStats = {
         "episode_steps": episode_steps,
         "episode_rewards": episode_rewards,
         "training_agents_rewards": training_agents_rewards,

@@ -198,3 +198,36 @@ def test_train_and_evaluate_integration(env, agents):
 
     # Should complete without errors
     assert eval_stats["episode_steps"] > 0
+
+
+def test_train_episode_with_shared_network(env):
+    """Test training with truly shared network (self-play scenario)."""
+    from src.utils.logger import setup_logger
+
+    logger = setup_logger(name="test_train", level="ERROR")
+
+    # Create a single shared agent for all players (self-play)
+    shared_agent = create_test_agent()
+    agents = {agent_id: shared_agent for agent_id in env.possible_agents}  # noqa: C420
+
+    # Get initial counts
+    initial_episode_count = shared_agent.episode_count
+    initial_buffer_size = len(shared_agent.replay_buffer)
+
+    # Train one episode
+    stats = train_episode(env, agents, logger, training_agents=list(env.possible_agents))
+
+    # Verify end_episode was called only once (not 4 times for 4 players)
+    assert shared_agent.episode_count == initial_episode_count + 1
+
+    # Verify experiences were stored (should have experiences from all 4 players)
+    final_buffer_size = len(shared_agent.replay_buffer)
+    assert final_buffer_size > initial_buffer_size
+
+    # Verify stats are correct
+    assert stats["episode_steps"] > 0
+    assert len(stats["training_agents"]) == 4
+
+    # All players should have rewards recorded
+    for agent_id in env.possible_agents:
+        assert agent_id in stats["training_agents_rewards"]

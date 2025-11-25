@@ -151,23 +151,21 @@ def get_training_params(cfg: DictConfig) -> dict[str, Any]:
     dict
         Dictionary of training parameters.
     """
-    training_cfg = cfg.get("training", {})
-    algorithm_cfg = cfg.get("algorithm", cfg.get("agent", {}))
+    training_cfg = cfg.training
+    algorithm_cfg = cfg.get("algorithm", cfg.get("agent"))
 
     return {
-        "num_episodes": training_cfg.get("num_episodes", 10000),
-        "batch_size": training_cfg.get(
-            "batch_size", algorithm_cfg.get("batch_size", 128)
-        ),
+        "num_episodes": training_cfg.num_episodes,
+        "batch_size": training_cfg.get("batch_size", algorithm_cfg.batch_size),
         "min_replay_size": training_cfg.get(
-            "min_replay_size", algorithm_cfg.get("min_buffer_size", 1000)
+            "min_replay_size", algorithm_cfg.min_buffer_size
         ),
         # Frequency of evaluation (every N episodes)
-        "eval_freq": training_cfg.get("eval_freq", 100),
+        "eval_freq": training_cfg.eval_freq,
         # Frequency of saving checkpoints (every N episodes)
-        "save_freq": training_cfg.get("save_freq", 1000),
+        "save_freq": training_cfg.save_freq,
         # Frequency of logging training progress (every N episodes)
-        "log_freq": training_cfg.get("log_freq", 10),
+        "log_freq": training_cfg.log_freq,
     }
 
 
