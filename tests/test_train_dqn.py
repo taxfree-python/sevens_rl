@@ -215,7 +215,9 @@ def test_train_episode_with_shared_network(env):
     initial_buffer_size = len(shared_agent.replay_buffer)
 
     # Train one episode
-    stats = train_episode(env, agents, logger, training_agents=list(env.possible_agents))
+    stats = train_episode(
+        env, agents, logger, training_agents=list(env.possible_agents)
+    )
 
     # Verify end_episode was called only once (not 4 times for 4 players)
     assert shared_agent.episode_count == initial_episode_count + 1
