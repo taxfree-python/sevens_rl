@@ -404,14 +404,15 @@ class SevensEnv(AECEnv):
         """
         return self.reward_config.get(rank, 0.0)
 
-    def step(self, action: int):
+    def step(self, action: int | None):
         """
         Execute an action.
 
         Parameters
         ----------
-        action : int
+        action : int | None
             Action index (0-51 for cards, 52 for pass).
+            None is accepted for terminated/truncated agents per PettingZoo AEC API.
 
         Raises
         ------
@@ -423,6 +424,9 @@ class SevensEnv(AECEnv):
             or self.truncations[self.agent_selection]
         ):
             return self._was_dead_step(action)
+
+        # For active agents, action must be an int
+        assert action is not None, "Action cannot be None for active agents"
 
         agent = self.agent_selection
 

@@ -1,0 +1,7 @@
+# Self-play: 4 DQN agents with shared network
+# All players learn from the same experience, creating a self-improving system
+
+num_players: 4
+mode: self_play
+shared_network: true
+training_players: all  # All players train together

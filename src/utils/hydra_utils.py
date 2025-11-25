@@ -31,12 +31,17 @@ def load_config(config_path: str) -> DictConfig:
     ------
     FileNotFoundError
         If config file does not exist.
+    TypeError
+        If loaded config is not a DictConfig.
     """
     config_file = Path(config_path)
     if not config_file.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    return OmegaConf.load(config_file)
+    loaded_config = OmegaConf.load(config_file)
+    if not isinstance(loaded_config, DictConfig):
+        raise TypeError(f"Expected DictConfig but got {type(loaded_config).__name__}")
+    return loaded_config
 
 
 def create_dqn_agent_from_config(
@@ -64,7 +69,7 @@ def create_dqn_agent_from_config(
     Examples
     --------
     >>> cfg = load_config("configs/train_dqn.yaml")
-    >>> agent = create_dqn_agent_from_config(cfg, state_dim=157, action_dim=53)
+    >>> agent = create_dqn_agent_from_config(cfg, state_dim=217, action_dim=53)
     """
     algorithm_cfg = cfg.get("algorithm", cfg.get("agent", cfg))
     training_cfg = cfg.get("training", {})
@@ -151,17 +156,21 @@ def get_training_params(cfg: DictConfig) -> dict[str, Any]:
     dict
         Dictionary of training parameters.
     """
-    training_cfg = cfg.get("training", {})
-    algorithm_cfg = cfg.get("algorithm", cfg.get("agent", {}))
+    training_cfg = cfg.training
+    algorithm_cfg = cfg.get("algorithm", cfg.get("agent"))
 
     return {
-        "num_episodes": training_cfg.get("num_episodes", 10000),
-        "batch_size": training_cfg.get(
-            "batch_size", algorithm_cfg.get("batch_size", 128)
-        ),
+        "num_episodes": training_cfg.num_episodes,
+        "batch_size": training_cfg.get("batch_size", algorithm_cfg.batch_size),
         "min_replay_size": training_cfg.get(
-            "min_replay_size", algorithm_cfg.get("min_buffer_size", 1000)
+            "min_replay_size", algorithm_cfg.min_buffer_size
         ),
+        # Frequency of evaluation (every N episodes)
+        "eval_freq": training_cfg.eval_freq,
+        # Frequency of saving checkpoints (every N episodes)
+        "save_freq": training_cfg.save_freq,
+        # Frequency of logging training progress (every N episodes)
+        "log_freq": training_cfg.log_freq,
     }
 
 
@@ -224,5 +233,13 @@ def merge_configs(base_cfg: DictConfig, override_cfg: DictConfig) -> DictConfig:
     -------
     DictConfig
         Merged configuration.
+
+    Raises
+    ------
+    TypeError
+        If merged config is not a DictConfig.
     """
-    return OmegaConf.merge(base_cfg, override_cfg)
+    merged = OmegaConf.merge(base_cfg, override_cfg)
+    if not isinstance(merged, DictConfig):
+        raise TypeError(f"Expected DictConfig but got {type(merged).__name__}")
+    return merged
