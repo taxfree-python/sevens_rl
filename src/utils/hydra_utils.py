@@ -31,12 +31,17 @@ def load_config(config_path: str) -> DictConfig:
     ------
     FileNotFoundError
         If config file does not exist.
+    TypeError
+        If loaded config is not a DictConfig.
     """
     config_file = Path(config_path)
     if not config_file.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    return OmegaConf.load(config_file)
+    loaded_config = OmegaConf.load(config_file)
+    if not isinstance(loaded_config, DictConfig):
+        raise TypeError(f"Expected DictConfig but got {type(loaded_config).__name__}")
+    return loaded_config
 
 
 def create_dqn_agent_from_config(
@@ -228,5 +233,13 @@ def merge_configs(base_cfg: DictConfig, override_cfg: DictConfig) -> DictConfig:
     -------
     DictConfig
         Merged configuration.
+
+    Raises
+    ------
+    TypeError
+        If merged config is not a DictConfig.
     """
-    return OmegaConf.merge(base_cfg, override_cfg)
+    merged = OmegaConf.merge(base_cfg, override_cfg)
+    if not isinstance(merged, DictConfig):
+        raise TypeError(f"Expected DictConfig but got {type(merged).__name__}")
+    return merged

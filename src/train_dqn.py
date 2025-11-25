@@ -358,12 +358,13 @@ def evaluate_episode(
             continue
 
         # Select action (no exploration for DQN agents)
+        assert observation is not None  # observation is always valid when not done
         action = agents[agent_id].select_action(observation, agent_id)
         env.step(action)
         episode_steps += 1
 
     # Restore epsilon values for DQN agents
-    for _agent_id, agent in agents.items():
+    for agent in agents.values():
         agent_id_key = id(agent)
         if agent_id_key in original_epsilons:
             agent.policy.set_epsilon(original_epsilons[agent_id_key])
